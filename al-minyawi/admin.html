@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة تحكم المينياوي</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- ===== شاشة الدخول ===== -->
+  <div class="admin-login" id="loginScreen">
+    <form class="login-card" id="loginForm">
+      <div class="login-icon"><i class="fa-solid fa-lock"></i></div>
+      <h1>لوحة تحكم المينياوي</h1>
+      <p>المنطقة دي لصاحب المتجر بس 😉</p>
+      <input type="password" id="loginPass" placeholder="كلمة المرور" autocomplete="current-password" required />
+      <p class="login-hint" id="loginHint" hidden><i class="fa-solid fa-circle-info"></i> كلمة المرور الافتراضية: <b>minyawi123</b> — غيّرها من الإعدادات بعد أول دخول</p>
+      <p class="login-error" id="loginError" hidden>كلمة المرور غلط! جرب تاني</p>
+      <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-right-to-bracket"></i> دخول</button>
+      <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-right"></i> رجوع للمتجر</a>
+    </form>
+  </div>
+
+  <!-- ===== لوحة التحكم ===== -->
+  <div class="admin-panel" id="panel" hidden>
+
+    <header class="admin-header">
+      <div class="container admin-header-inner">
+        <a href="index.html" class="logo">
+          <span class="logo-icon"><i class="fa-solid fa-carrot"></i></span>
+          <span class="logo-text">المينياوي<small>لوحة التحكم</small></span>
+        </a>
+        <div class="admin-header-actions">
+          <a href="index.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-store"></i> المتجر</a>
+          <button class="btn btn-primary btn-sm" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="container admin-body">
+
+      <div class="admin-grid">
+
+        <!-- ===== إضافة / تعديل منتج ===== -->
+        <div class="admin-card" id="productFormCard">
+          <h2 id="formTitle"><i class="fa-solid fa-plus"></i> إضافة منتج جديد</h2>
+          <p class="admin-sub" id="formSub">منتجاتك هتظهر في المتجر فورًا</p>
+
+          <form id="productForm">
+            <input type="hidden" id="editId" />
+            <input type="hidden" id="editIsAdmin" />
+
+            <div class="form-group">
+              <label>صورة المنتج (إيموجي)</label>
+              <div class="emoji-picker" id="emojiPicker"></div>
+              <input type="text" id="pEmoji" placeholder="أو اكتب أي إيموجي هنا" maxlength="8" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>اسم المنتج <span>*</span></label>
+                <input type="text" id="pName" placeholder="مثال: فلفل رومي" required />
+              </div>
+              <div class="form-group">
+                <label>القسم <span>*</span></label>
+                <select id="pCat" required>
+                  <option value="veg">خضار</option>
+                  <option value="leafy">خضار ورقية</option>
+                  <option value="fruit">فاكهة</option>
+                  <option value="seasonal">فاكهة الموسم</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>الوحدة <span>*</span></label>
+                <input type="text" id="pUnit" placeholder="كيلو / حزمة / واحدة..." list="unitOptions" required />
+                <datalist id="unitOptions">
+                  <option value="كيلو"></option>
+                  <option value="حزمة"></option>
+                  <option value="ربطة"></option>
+                  <option value="واحدة"></option>
+                  <option value="علبة"></option>
+                </datalist>
+              </div>
+              <div class="form-group">
+                <label>لون الخلفية</label>
+                <select id="pBg">
+                  <option value="#dcfce7">أخضر فاتح</option>
+                  <option value="#fee2e2">وردي</option>
+                  <option value="#ffedd5">برتقالي</option>
+                  <option value="#fef9c3">أصفر</option>
+                  <option value="#fef3c7">كريمي</option>
+                  <option value="#f3e8ff">بنفسجي</option>
+                  <option value="#ccfbf1">تركواز</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>السعر الحالي (ج.م) <span>*</span></label>
+                <input type="number" id="pPrice" placeholder="0" min="0" step="0.5" required />
+              </div>
+              <div class="form-group">
+                <label>السعر القديم (ج.م)</label>
+                <input type="number" id="pOldPrice" placeholder="سيبه فاضي لو مفيش عرض" min="0" step="0.5" />
+                <small class="field-hint">لو حطيت سعر قديم أعلى = بيظهر كعرض 🔥</small>
+              </div>
+            </div>
+
+            <div class="form-row badges-row">
+              <label class="check-label"><input type="checkbox" id="pOffer" /> عرض خاص 🔥</label>
+              <label class="check-label"><input type="checkbox" id="pNew" /> جديد ✨</label>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="pSubmitBtn"><i class="fa-solid fa-check"></i> حفظ المنتج</button>
+              <button type="button" class="btn btn-ghost" id="pCancelEdit" hidden><i class="fa-solid fa-xmark"></i> إلغاء التعديل</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- ===== قائمة المنتجات ===== -->
+        <div class="admin-card">
+          <h2><i class="fa-solid fa-boxes-stacked"></i> المنتجات الحالية (<span id="prodCount">0</span>)</h2>
+          <p class="admin-sub">اضغط تعديل على أي منتج.. أو احذفه</p>
+
+          <div class="admin-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="adminSearch" placeholder="دوّر على منتج..." />
+          </div>
+
+          <div class="admin-list" id="adminList"></div>
+        </div>
+
+      </div>
+
+      <!-- ===== الإعدادات ===== -->
+      <div class="admin-card settings-card">
+        <h2><i class="fa-solid fa-gear"></i> إعدادات المتجر</h2>
+        <div class="settings-grid">
+          <div class="form-group">
+            <label>رقم الواتساب لاستقبال الطلبات <span>*</span></label>
+            <input type="tel" id="sWhatsapp" placeholder="201000000000 (الصيغة الدولية بدون +)" />
+            <small class="field-hint">كل طلبات العملاء هتوصلك على الرقم ده</small>
+          </div>
+          <div class="form-group">
+            <label>رقم التليفون المعروض في الموقع</label>
+            <input type="tel" id="sPhone" placeholder="01000000000" />
+            <small class="field-hint">الرقم اللي بيظهر في قسم تواصل معنا والفوتر</small>
+          </div>
+          <div class="form-group">
+            <label>تغيير كلمة المرور</label>
+            <input type="password" id="sPass1" placeholder="كلمة المرور الجديدة (6 أحرف على الأقل)" />
+            <input type="password" id="sPass2" placeholder="أكتبها تاني للتأكيد" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="saveSettingsBtn"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== توست ===== -->
+  <div class="toast" id="toast"><i class="fa-solid fa-check"></i><span id="toastMsg"></span></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

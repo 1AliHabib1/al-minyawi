@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>المينياوي | خضار وفاكهة طازجة توصلك لحد الباب</title>
+  <meta name="description" content="موقع المينياوي لبيع الخضار والفاكهة الطازجة - توصيل سريع لحد الباب، جودة عالية، أسعار مناسبة، ودفع عند الاستلام." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== شريط الإعلان العلوي ===== -->
+  <div class="top-bar">
+    <div class="container top-bar-inner">
+      <span class="top-bar-item"><i class="fa-solid fa-clock"></i> مفتوح يوميًا من 7 صباحًا حتى 11 مساءً</span>
+      <span class="top-bar-item"><i class="fa-solid fa-leaf"></i> طازة يوميًا من المزرعة لباب البيت</span>
+    </div>
+  </div>
+
+  <!-- ===== الهيدر ===== -->
+  <header class="header" id="header">
+    <div class="container header-inner">
+      <a href="#home" class="logo">
+        <span class="logo-icon"><i class="fa-solid fa-carrot"></i></span>
+        <span class="logo-text">المينياوي<small>خضار وفاكهة طازة</small></span>
+      </a>
+
+      <nav class="nav" id="nav">
+        <a href="#home" class="nav-link active">الرئيسية</a>
+        <a href="#products" class="nav-link">المنتجات</a>
+        <a href="#offers" class="nav-link">العروض</a>
+        <a href="#features" class="nav-link">لماذا نحن؟</a>
+        <a href="#contact" class="nav-link">تواصل معنا</a>
+        <button class="nav-close" id="navClose" aria-label="إغلاق القائمة"><i class="fa-solid fa-xmark"></i></button>
+      </nav>
+
+      <div class="header-actions">
+        <button class="cart-btn" id="cartBtn" aria-label="عربة التسوق">
+          <i class="fa-solid fa-basket-shopping"></i>
+          <span class="cart-badge" id="cartCount">0</span>
+        </button>
+        <button class="menu-btn" id="menuBtn" aria-label="القائمة"><i class="fa-solid fa-bars"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== الهيرو ===== -->
+  <section class="hero" id="home">
+    <div class="hero-blob hero-blob-1"></div>
+    <div class="hero-blob hero-blob-2"></div>
+    <div class="container hero-inner">
+      <div class="hero-content">
+        <span class="hero-badge"><i class="fa-solid fa-star"></i> منتجات يوم واحد طازة من المزرعة</span>
+        <h1 class="hero-title">خضار وفاكهة <span class="grad-text">طازة يوميًا</span>.. توصلك لحد <span class="grad-text">باب البيت</span></h1>
+        <p class="hero-desc">اطلب دلوقتي من المينياوي.. اختار من أكتر من ٤٠ صنف، وهنوصلك أطعم وأطازة خضار وفاكهة في أقل من ٢٤ ساعة، بجودة عالية وأسعار على قد الإيد.</p>
+        <div class="hero-actions">
+          <a href="#products" class="btn btn-primary"><i class="fa-solid fa-basket-shopping"></i> اطلب دلوقتي</a>
+          <a href="#offers" class="btn btn-ghost"><i class="fa-solid fa-fire"></i> شوف العروض</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><strong>+40</strong><span>صنف طازة</span></div>
+          <div class="stat"><strong>+1000</strong><span>عميل سعيد</span></div>
+          <div class="stat"><strong>24h</strong><span>توصيل سريع</span></div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-basket">
+          <span class="float-emoji e1">🍅</span>
+          <span class="float-emoji e2">🥬</span>
+          <span class="float-emoji e3">🍌</span>
+          <span class="float-emoji e4">🍇</span>
+          <span class="float-emoji e5">🥕</span>
+          <span class="float-emoji e6">🍓</span>
+          <span class="float-emoji e7">🍊</span>
+          <span class="float-emoji e8">🥒</span>
+          <i class="fa-solid fa-basket-shopping"></i>
+        </div>
+        <div class="hero-card card-1"><span>🥬</span><div><strong>خضار طازة</strong><small>يوميًا من المزرعة</small></div></div>
+        <div class="hero-card card-2"><span>🍓</span><div><strong>فاكهة موسم</strong><small>اختيارنا بعناية</small></div></div>
+      </div>
+    </div>
+    <svg class="hero-wave" viewBox="0 0 1440 120" preserveAspectRatio="none"><path d="M0,64 C360,120 1080,0 1440,64 L1440,120 L0,120 Z" fill="#f6fbf6"></path></svg>
+  </section>
+
+  <!-- ===== شريط المنتجات المتحرك ===== -->
+  <div class="marquee">
+    <div class="marquee-track">
+      <span>🍅 طماطم بلدي</span><span>🥒 خيار</span><span>🥬 خس</span><span>🍌 موز</span><span>🥔 بطاطس</span><span>🍓 فراولة</span><span>🧅 بصل أحمر</span><span>🍊 برتقال</span><span>🥕 جزر</span><span>🍇 عنب</span><span>🌿 ملوخية</span><span>🥭 مانجو</span>
+      <span>🍅 طماطم بلدي</span><span>🥒 خيار</span><span>🥬 خس</span><span>🍌 موز</span><span>🥔 بطاطس</span><span>🍓 فراولة</span><span>🧅 بصل أحمر</span><span>🍊 برتقال</span><span>🥕 جزر</span><span>🍇 عنب</span><span>🌿 ملوخية</span><span>🥭 مانجو</span>
+    </div>
+  </div>
+
+  <!-- ===== المنتجات ===== -->
+  <section class="products section" id="products">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-tag"><i class="fa-solid fa-seedling"></i> قائمة المنتجات</span>
+        <h2 class="section-title">اختار طلباتك من هنا</h2>
+        <p class="section-sub">كل اللي نفسك فيه من خضار وفاكهة.. طازة وبأسعار معقولة</p>
+      </div>
+
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="دوّر على طماطم، موز، خيار..." autocomplete="off" />
+      </div>
+
+      <div class="filters" id="filters">
+        <button class="chip active" data-cat="all"><i class="fa-solid fa-border-all"></i> الكل</button>
+        <button class="chip" data-cat="veg"><i class="fa-solid fa-carrot"></i> خضار</button>
+        <button class="chip" data-cat="leafy"><i class="fa-solid fa-leaf"></i> خضار ورقية</button>
+        <button class="chip" data-cat="fruit"><i class="fa-solid fa-apple-whole"></i> فاكهة</button>
+        <button class="chip" data-cat="seasonal"><i class="fa-solid fa-sun"></i> فاكهة الموسم</button>
+      </div>
+
+      <div class="products-grid" id="productsGrid"></div>
+      <div class="no-results" id="noResults" hidden>
+        <span>🥕</span>
+        <h3>مفيش نتايج للبحث ده</h3>
+        <p>جرب تكتب اسم تاني أو اختار قسم تاني</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== فيديو التعريف بالمحل ===== -->
+  <section class="video-section section" id="about-video">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-tag"><i class="fa-solid fa-video"></i> جولة في المحل</span>
+        <h2 class="section-title">شوف المحل بنفسك</h2>
+        <p class="section-sub">جولة قصيرة جوه المينياوي.. تشوف بنفسك جودة الخضار والفاكهة</p>
+      </div>
+      <div class="video-wrap">
+        <video id="storeVideo" controls preload="metadata" playsinline poster="assets/video-poster.svg">
+          <source src="assets/video.mp4" type="video/mp4" />
+          متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉
+        </video>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== العروض ===== -->
+  <section class="offers section" id="offers">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-tag"><i class="fa-solid fa-fire"></i> عروض اليوم</span>
+        <h2 class="section-title">وفّر أكتر مع عروض المينياوي</h2>
+        <p class="section-sub">عروض بتتغير كل يوم.. يلا اسبق واطلب</p>
+      </div>
+      <div class="offers-grid" id="offersGrid"></div>
+    </div>
+  </section>
+
+  <!-- ===== المميزات ===== -->
+  <section class="features section" id="features">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-tag"><i class="fa-solid fa-award"></i> ليه تختار المينياوي؟</span>
+        <h2 class="section-title">لأنك تستاهل الأفضل</h2>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-seedling"></i></div>
+          <h3>طازة كل يوم</h3>
+          <p>بنشتري من المزرعة الصبح وبنوصلّك الطلب في نفس اليوم.. جودة مضمونة 100%.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-truck-fast"></i></div>
+          <h3>توصيل سريع</h3>
+          <p>توصيل لحد الباب في أسرع وقت ممكن.. طلباتك بتوصل وأنت في مكانك.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+          <h3>دفع عند الاستلام</h3>
+          <p>متدفعش غير لما تستلم وتتأكد بنفسك من جودة المنتج. ثقتنا فيك كاملة.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <h3>جودة مضمونة</h3>
+          <p>أي منتج مش عاجبك نستبدله فورًا.. رضاك هو أولويتنا الأولى.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== كيف تشتري ===== -->
+  <section class="how section">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-tag"><i class="fa-solid fa-list-check"></i> إزاي أطلب؟</span>
+        <h2 class="section-title">اطلب في 3 خطوات بسيطة</h2>
+      </div>
+      <div class="how-grid">
+        <div class="how-step">
+          <div class="step-num">1</div>
+          <div class="step-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+          <h3>اختار منتجاتك</h3>
+          <p>تصفح المنتجات وضيف اللي يعجبك في العربة</p>
+        </div>
+        <div class="how-step">
+          <div class="step-num">2</div>
+          <div class="step-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+          <h3>أكد بياناتك</h3>
+          <p>اكتب اسمك وعنوانك ورقم تليفونك من غير تعقيد</p>
+        </div>
+        <div class="how-step">
+          <div class="step-num">3</div>
+          <div class="step-icon"><i class="fa-solid fa-box-open"></i></div>
+          <h3>استلم طلبك</h3>
+          <p>هنتواصل معاك على واتساب ونوصلك لحد الباب</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== تواصل معنا ===== -->
+  <section class="contact section" id="contact">
+    <div class="container contact-inner">
+      <div class="contact-info">
+        <span class="section-tag"><i class="fa-solid fa-phone"></i> تواصل معنا</span>
+        <h2 class="contact-title">عندك سؤال؟<br />احنا معاك في أي وقت</h2>
+        <p>فرقنا جاهز يرد على استفساراتك من الساعة 7 صباحًا لحد 11 مساءً، عشان نضمن إن طلبك يوصلك بالظبط زي ما طلبت.</p>
+        <ul class="contact-list">
+          <li><a href="tel:01000000000"><span class="contact-ico"><i class="fa-solid fa-phone"></i></span> <span class="site-phone">01000000000</span></a></li>
+          <li><a href="https://wa.me/201030809915" target="_blank" rel="noopener"><span class="contact-ico"><i class="fa-brands fa-whatsapp"></i></span> واتساب المينياوي</a></li>
+          <li><a href="https://www.facebook.com/profile.php?id=100076350972892" target="_blank" rel="noopener"><span class="contact-ico"><i class="fa-brands fa-facebook-f"></i></span> صفحتنا على فيسبوك</a></li>
+          <li><span class="contact-ico"><i class="fa-solid fa-location-dot"></i></span> التفتيش - شارع الرمد - بجوار برج الزراعيين - 1و2</li>
+        </ul>
+      </div>
+      <div class="contact-form-wrap">
+        <form class="contact-form" id="contactForm">
+          <h3>ابعتلنا رسالة</h3>
+          <input type="text" placeholder="اسمك" required />
+          <input type="tel" placeholder="رقم التليفون" required />
+          <textarea placeholder="اكتب رسالتك هنا..." rows="4" required></textarea>
+          <button type="submit" class="btn btn-primary btn-block">ابعت الرسالة <i class="fa-solid fa-paper-plane"></i></button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== الفوتر ===== -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-col footer-brand">
+        <a href="#home" class="logo">
+          <span class="logo-icon"><i class="fa-solid fa-carrot"></i></span>
+          <span class="logo-text">المينياوي<small>خضار وفاكهة طازة</small></span>
+        </a>
+        <p>وجهتك الأولى للخضار والفاكهة الطازة.. جودة عالية، أسعار مناسبة، وتوصيل لحد باب البيت في كل المنيا.</p>
+        <div class="socials">
+          <a href="https://www.facebook.com/profile.php?id=100076350972892" target="_blank" rel="noopener" aria-label="فيسبوك"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="https://wa.me/201030809915" target="_blank" rel="noopener" aria-label="واتساب"><i class="fa-brands fa-whatsapp"></i></a>
+          <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="انستجرام"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://tiktok.com" target="_blank" rel="noopener" aria-label="تيك توك"><i class="fa-brands fa-tiktok"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>روابط سريعة</h4>
+        <a href="#home">الرئيسية</a>
+        <a href="#products">المنتجات</a>
+        <a href="#offers">العروض</a>
+        <a href="#features">لماذا نحن؟</a>
+      </div>
+      <div class="footer-col">
+        <h4>الأقسام</h4>
+        <a href="#products" data-cat-link="veg">خضار</a>
+        <a href="#products" data-cat-link="leafy">خضار ورقية</a>
+        <a href="#products" data-cat-link="fruit">فاكهة</a>
+        <a href="#products" data-cat-link="seasonal">فاكهة الموسم</a>
+      </div>
+      <div class="footer-col">
+        <h4>معلومات التواصل</h4>
+        <p><i class="fa-solid fa-location-dot"></i> التفتيش - شارع الرمد - بجوار برج الزراعيين - 1و2</p>
+        <p><i class="fa-solid fa-phone"></i> <span class="site-phone">01000000000</span></p>
+        <p><i class="fa-solid fa-clock"></i> يوميًا: 7 صباحًا - 11 مساءً</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        <p>© 2026 المينياوي للخضار والفاكهة. كل الحقوق محفوظة.</p>
+        <p>صُنع بحب <i class="fa-solid fa-heart"></i> في المنيا &nbsp;•&nbsp; <a href="admin.html" title="لوحة التحكم"><i class="fa-solid fa-lock"></i> لوحة التحكم</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== عربة التسوق ===== -->
+  <div class="cart-overlay" id="cartOverlay"></div>
+  <aside class="cart-drawer" id="cartDrawer" aria-label="عربة التسوق">
+    <div class="cart-header">
+      <h3><i class="fa-solid fa-basket-shopping"></i> عربة التسوق</h3>
+      <button class="close-btn" id="closeCart" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="cart-body" id="cartBody"></div>
+    <div class="cart-footer" id="cartFooter">
+      <div class="cart-total">
+        <span>الإجمالي</span>
+        <strong id="cartTotal">0 ج.م</strong>
+      </div>
+      <button class="btn btn-primary btn-block" id="checkoutBtn"><i class="fa-brands fa-whatsapp"></i> تأكيد الطلب عبر واتساب</button>
+    </div>
+  </aside>
+
+  <!-- ===== مودال تأكيد الطلب ===== -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="modal">
+      <button class="close-btn modal-close" id="closeModal" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-head">
+        <span class="modal-emoji">📦</span>
+        <h3>بيانات الطلب</h3>
+        <p>اكتب بياناتك صح وهنتواصل معاك في أسرع وقت</p>
+      </div>
+      <form id="checkoutForm">
+        <div class="form-group">
+          <label for="cName">الاسم بالكامل <span>*</span></label>
+          <input type="text" id="cName" placeholder="مثال: أحمد محمود" required />
+        </div>
+        <div class="form-group">
+          <label for="cPhone">رقم التليفون <span>*</span></label>
+          <input type="tel" id="cPhone" placeholder="01xxxxxxxxx" required />
+        </div>
+        <div class="form-group">
+          <label for="cCity">المدينة / القرية <span>*</span></label>
+          <input type="text" id="cCity" placeholder="المنيا" required />
+        </div>
+        <div class="form-group">
+          <label for="cAddress">العنوان بالتفصيل <span>*</span></label>
+          <textarea id="cAddress" rows="2" placeholder="اسم الشارع، رقم العمارة، الطابق..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="cNotes">ملاحظات (اختياري)</label>
+          <textarea id="cNotes" rows="2" placeholder="مثال: خلي الطماطم نضجة زيادة..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="sendOrderBtn"><i class="fa-brands fa-whatsapp"></i> إرسال الطلب على واتساب</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== توست ===== -->
+  <div class="toast" id="toast"><i class="fa-solid fa-check"></i><span id="toastMsg">تمت الإضافة!</span></div>
+
+  <!-- ===== زر العودة للأعلى ===== -->
+  <button class="to-top" id="toTop" aria-label="العودة للأعلى"><i class="fa-solid fa-arrow-up"></i></button>
+
+  <!-- ===== واتساب عائم ===== -->
+  <a href="https://wa.me/201030809915" target="_blank" rel="noopener" class="whatsapp-float" aria-label="واتساب">
+    <i class="fa-brands fa-whatsapp"></i>
+  </a>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
