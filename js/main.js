@@ -1,5 +1,5 @@
-/* ============================================================
-   المينياوي | منطق الموقع
+﻿/* ============================================================
+   المنياوي | منطق الموقع
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentCat = 'all';
   let searchTerm = '';
   let cart = loadCart();
+  const pickQty = {};
 
   // ---------- العربة ----------
   function loadCart() {
@@ -61,25 +62,33 @@ document.addEventListener('DOMContentLoaded', () => {
     noResults.hidden = list.length > 0;
 
     productsGrid.innerHTML = list.map((p, i) => `
-      <article class="product-card reveal visible" style="animation-delay:${Math.min(i * 40, 400)}ms; --img-bg:${p.bg}">
+      <article class="product-card reveal visible" data-id="${p.id}" style="animation-delay:${Math.min(i * 40, 400)}ms; --img-bg:${p.bg}">
         ${p.offer ? '<span class="product-badge">🔥 عرض خاص</span>' : ''}
         ${p.badge === 'new' ? '<span class="product-badge new">✨ جديد</span>' : ''}
         <div class="product-img">${p.emoji}</div>
         <div class="product-cat">${CATEGORY_LABELS[p.cat]}</div>
         <h3 class="product-name">${p.name}</h3>
         <div class="product-unit">${p.unit} ${p.unit === 'حزمة' || p.unit === 'ربطة' ? 'بمزاجك' : ''}</div>
+        ${p.unit === 'كيلو' ? `
+        <div class="fraction-chips">
+          <button class="frac-chip" onclick="stepPick('${p.id}', 0.25, true)">¼ ربع كيلو</button>
+          <button class="frac-chip" onclick="stepPick('${p.id}', 0.5, true)">½ نص كيلو</button>
+          <button class="frac-chip" onclick="stepPick('${p.id}', 1, true)">1 كيلو</button>
+        </div>
+        <div class="qty-tip">✍️ اقدر أكتب الكمية بنفسي (مثال: كيلو ونص)</div>` : ''}
         <div class="product-price-row">
           <div class="product-price">
             ${p.oldPrice ? `<span class="price-old">${p.oldPrice} ج.م</span>` : ''}
             <span class="price-now">${p.price} ج.م</span>
           </div>
-          ${cart[p.id] ? `
+          <div class="card-actions">
             <div class="product-qty">
-              <button class="qty-btn" onclick="changeQty('${p.id}', -1)">−</button>
-              <span class="qty-val">${cart[p.id]}</span>
-              <button class="qty-btn" onclick="changeQty('${p.id}', 1)">+</button>
-            </div>` : `
-            <button class="add-btn" onclick="addToCart('${p.id}')" aria-label="إضافة للعربة"><i class="fa-solid fa-plus"></i></button>`}
+              <button class="qty-btn" onclick="stepPick('${p.id}', -1)" aria-label="تقليل">−</button>
+              <input type="text" class="qty-input" value="${formatQty(pickQty[p.id] || 1)}" inputmode="decimal" aria-label="الكمية" />
+              <button class="qty-btn" onclick="stepPick('${p.id}', 1)" aria-label="زيادة">+</button>
+            </div>
+            <button class="add-btn" onclick="addToCart('${p.id}')" aria-label="إضافة للعربة"><i class="fa-solid fa-basket-shopping"></i></button>
+          </div>
         </div>
       </article>`).join('') || '';
   }
@@ -103,11 +112,138 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------- إضافة وتعديل العربة ----------
+  function formatQty(q) {
+    if (q === 0.25) return '¼';
+    if (q === 0.5) return '½';
+    if (q === 0.75) return '¾';
+    return q % 1 === 0 ? String(q) : String(q);
+  }
+
+  function formatQtyText(q, unit) {
+    if (unit === 'كيلو') {
+      if (q === 1) return 'كيلو';
+      if (q === 0.25) return 'ربع كيلو';
+      if (q === 0.5) return 'نص كيلو';
+      if (q === 0.75) return '3 أرباع كيلو';
+      if (q % 1 === 0.5) return `${Math.floor(q)} كيلو ونص`;
+      return `${q} كيلو`;
+    }
+    return `${q} ${unit}`;
+  }
+
+  function parseQtyText(t) {
+    let s = String(t).trim();
+    if (!s) return null;
+    const ar = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
+    s = s.replace(/[٠-٩]/g, d => ar[d]);
+    s = s.replace(/[،٫,]/g, '.');
+
+    const hadKilo = /كيلو/.test(s);
+    const kiloIdx = s.indexOf('كيلو');
+    const fracIdx = s.search(/ربع|نص|نصف|أرباع|أربع/);
+    const fracPos = s.search(/\d+\s*\/\s*\d+/);
+    const fracAfterKilo = kiloIdx !== -1 && fracIdx !== -1 && fracIdx > kiloIdx;
+    const kwa = /كيلو\s*و/.test(s);
+    s = s.replace(/كيلوين/g, ' 2 ');
+    s = s.replace(/كيلوا?/g, ' ');
+
+    let extra = 0;
+    if (/ونصف|ونص|و نصف/.test(s)) extra += 0.5;
+    if (/وربع|و ربع/.test(s)) extra += 0.25;
+    if (/وأرباع|و أرباع|وأربع|و أربع|و ثلاثة أرباع|وثلاثة أرباع|وثلاثة|و ثلاثة|و تلاتة|وتلاتة/.test(s)) extra += 0.75;
+    s = s.replace(/ونصف|ونص|وربع|وأرباع|وأربع|و نصف|و ربع|و أرباع|و أربع|و ثلاثة أرباع|وثلاثة أرباع|وثلاثة|و ثلاثة|و تلاتة|وتلاتة/gi, ' ');
+
+    const frac = s.match(/(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)/);
+    let q = NaN;
+    if (frac) {
+      const whole = frac[1] ? parseInt(frac[1], 10) : 0;
+      const den = parseInt(frac[3], 10);
+      q = den ? whole + parseInt(frac[2], 10) / den : NaN;
+      if (kwa) q += 1;
+      else if (hadKilo && fracPos !== -1 && fracPos > kiloIdx && q < 1) q += 1;
+    } else {
+      const m = s.match(/-?\d+(?:[.,]\d+)?/);
+      q = m ? parseFloat(m[0].replace(',', '.')) : NaN;
+      if (q === 3 && /أرباع|أربع/.test(s)) q = 0.75;
+    }
+    if (isNaN(q)) {
+      let fracVal = 0;
+      if (s.includes('أرباع')) fracVal = 0.75;
+      else if (s.includes('ربع') && !s.includes('أربعة')) fracVal = 0.25;
+      else if (s.includes('نصف') || s.includes('نص')) fracVal = 0.5;
+      let base = wordNumber(s);
+      if (base === null) {
+        if (fracVal !== 0 && fracAfterKilo) base = 1;
+        else if (fracVal !== 0 && hadKilo && fracIdx !== -1) base = 0;
+        else if (hadKilo) base = 1;
+        else base = 0;
+      } else if (fracVal === 0.75 && /تلاتة|ثلاثة/.test(s)) {
+        base = 0;
+      }
+      if (fracVal === 0 && base === 0) return null;
+      q = base + fracVal;
+    }
+    const r = Math.round((q + extra) * 4) / 4;
+    return r > 0 ? r : null;
+  }
+
+  function wordNumber(s) {
+    if (s.includes('عشرة')) return 10;
+    if (s.includes('تسعة')) return 9;
+    if (s.includes('تمانية') || s.includes('ثمانية')) return 8;
+    if (s.includes('سبعة')) return 7;
+    if (s.includes('ستة')) return 6;
+    if (s.includes('خمسة')) return 5;
+    if (s.includes('أربعة') || s.includes('اربعة')) return 4;
+    if (s.includes('تلاتة') || s.includes('ثلاثة')) return 3;
+    if (s.includes('اتنين') || s.includes('اثنين') || s.includes('اثنان')) return 2;
+    if (s.includes('واحد') || s.includes('وحدة') || s.includes('احدي')) return 1;
+    return null;
+  }
+
+  window.stepPick = (id, d, set) => {
+    const p = PRODUCTS.find(x => x.id === id);
+    const isKilo = p && p.unit === 'كيلو';
+    const min = isKilo ? 0.25 : 1;
+    const cur = pickQty[id] || 1;
+    const step = isKilo ? 0.5 : 1;
+    const val = set ? d : Math.max(min, Math.round((cur + d * step) * 4) / 4);
+    pickQty[id] = val;
+    const el = document.querySelector(`.product-card[data-id="${id}"] .qty-input`);
+    if (el) el.value = formatQty(val);
+  };
+
+  // ---------- كتابة الكمية باليد ----------
+  productsGrid.addEventListener('change', (e) => {
+    const input = e.target.closest('.qty-input');
+    if (!input) return;
+    const card = input.closest('.product-card');
+    const id = card ? card.dataset.id : '';
+    const p = PRODUCTS.find(x => x.id === id);
+    const val = parseQtyText(input.value);
+    if (val === null || !p) {
+      input.value = formatQty(pickQty[id] || 1);
+      return;
+    }
+    pickQty[id] = p.unit === 'كيلو' ? Math.max(0.25, val) : Math.max(1, Math.round(val));
+    input.value = formatQty(pickQty[id]);
+  });
+  productsGrid.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.classList.contains('qty-input')) {
+      e.preventDefault();
+      e.target.blur();
+    }
+  });
+
   window.addToCart = (id) => {
     const p = PRODUCTS.find(x => x.id === id);
-    cart[id] = (cart[id] || 0) + 1;
+    const qty = pickQty[id] || 1;
+    cart[id] = Math.round(((cart[id] || 0) + qty) * 4) / 4;
+    pickQty[id] = 1;
+    const el = document.querySelector(`.product-card[data-id="${id}"] .qty-input`);
+    if (el) el.value = formatQty(1);
     saveCart();
-    showToast(`ضيفنا ${p.name} للعربة 🛒`);
+    showToast(`ضيفنا ${formatQtyText(qty, p.unit)} من ${p.name} 🛒`);
     cartCount.classList.remove('bump');
     void cartCount.offsetWidth;
     cartCount.classList.add('bump');
@@ -115,8 +251,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.changeQty = (id, d) => {
     const p = PRODUCTS.find(x => x.id === id);
-    const next = (cart[id] || 0) + d;
-    if (next <= 0) {
+    const isKilo = p && p.unit === 'كيلو';
+    const min = isKilo ? 0.25 : 1;
+    const step = isKilo ? 0.5 : 1;
+    const next = Math.round(((cart[id] || 0) + d * step) * 4) / 4;
+    if (next < min) {
       delete cart[id];
       showToast(`شيلنا ${p.name} من العربة`);
     } else {
@@ -159,13 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="cart-item-img">${p.emoji}</div>
           <div class="cart-item-info">
             <h5>${p.name}</h5>
-            <small>${p.unit}</small>
+            <small>${formatQtyText(qty, p.unit)}</small>
             <div class="cart-item-price">${p.price * qty} ج.م</div>
           </div>
           <div class="cart-item-actions">
             <div class="product-qty">
               <button class="qty-btn" onclick="changeQty('${id}', -1)">−</button>
-              <span class="qty-val">${qty}</span>
+              <span class="qty-val">${formatQty(qty)}</span>
               <button class="qty-btn" onclick="changeQty('${id}', 1)">+</button>
             </div>
             <button class="cart-remove" onclick="removeFromCart('${id}')"><i class="fa-solid fa-trash-can"></i> حذف</button>
@@ -186,6 +325,18 @@ document.addEventListener('DOMContentLoaded', () => {
   cartOverlay.addEventListener('click', closeCart);
 
   // ---------- التأكيد والطلب ----------
+  function buildCartLines() {
+    return Object.entries(cart).map(([id, qty]) => {
+      const p = PRODUCTS.find(x => x.id === id);
+      return `• ${p.name} × ${formatQtyText(qty, p.unit)} = ${p.price * qty} ج.م`;
+    });
+  }
+
+  function openWhatsapp(msg, note) {
+    window.location.href = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`;
+    if (note) showToast(note);
+  }
+
   document.getElementById('checkoutBtn').addEventListener('click', () => {
     if (cartCountTotal() === 0) { showToast('العربة فاضية! ضيف منتجات الأول'); return; }
     checkoutModal.classList.add('show');
@@ -206,34 +357,50 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const name = document.getElementById('cName').value.trim();
     const phone = document.getElementById('cPhone').value.trim();
-    const city = document.getElementById('cCity').value.trim();
     const address = document.getElementById('cAddress').value.trim();
     const notes = document.getElementById('cNotes').value.trim();
 
-    const lines = Object.entries(cart).map(([id, qty]) => {
-      const p = PRODUCTS.find(x => x.id === id);
-      return `• ${p.name} (${p.unit}) × ${qty} = ${p.price * qty} ج.م`;
-    });
+    const lines = buildCartLines();
     const total = cartSum();
 
     const msg =
-      `🍅 *طلب جديد من المينياوي* 🍅\n\n` +
+      `🍅 *طلب جديد من المنياوي* 🍅\n\n` +
       `👤 الاسم: ${name}\n` +
       `📱 التليفون: ${phone}\n` +
-      `📍 المدينة: ${city}\n` +
       `🏠 العنوان: ${address}\n` +
       (notes ? `📝 ملاحظات: ${notes}\n` : '') +
       `\n🛒 *تفاصيل الطلب:*\n${lines.join('\n')}\n\n` +
       `💰 *الإجمالي: ${total} ج.م*\n\n` +
-      `شكرًا لاختيارك المينياوي!`;
+      `شكرًا لاختيارك المنياوي!`;
 
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+    openWhatsapp(msg, '');
 
     cart = {};
     saveCart();
     checkoutModal.classList.remove('show');
     document.body.style.overflow = '';
-    showToast('تم إرسال طلبك! هنكلمك خلال دقايق ✅');
+    showToast('خطوة أخيرة: افتح الواتساب واضغط إرسال لتأكيد طلبك 📲');
+  });
+
+  // ---------- الوصول السري للوحة التحكم ----------
+  // دوس على اللوجو 5 مرات ورا بعض (خلال 3 ثواني) أو Ctrl+Shift+A
+  let logoCount = 0;
+  let logoResetTimer;
+  document.querySelectorAll('.logo').forEach(logo => {
+    logo.addEventListener('click', () => {
+      logoCount++;
+      clearTimeout(logoResetTimer);
+      logoResetTimer = setTimeout(() => { logoCount = 0; }, 3000);
+      if (logoCount >= 5) {
+        logoCount = 0;
+        location.href = 'admin.html';
+      }
+    });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+      location.href = 'admin.html';
+    }
   });
 
   // ---------- التوست ----------

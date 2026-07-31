@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>المينياوي | خضار وفاكهة طازجة توصلك لحد الباب</title>
-  <meta name="description" content="موقع المينياوي لبيع الخضار والفاكهة الطازجة - توصيل سريع لحد الباب، جودة عالية، أسعار مناسبة، ودفع عند الاستلام." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>" />
+  <title>المنياوي | خضار وفاكهة طازجة توصلك لحد الباب</title>
+  <meta name="description" content="موقع المنياوي لبيع الخضار والفاكهة الطازجة - توصيل سريع لحد الباب، جودة عالية، أسعار مناسبة، ودفع عند الاستلام." />
+  <link rel="icon" href="assets/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
@@ -26,8 +26,8 @@
   <header class="header" id="header">
     <div class="container header-inner">
       <a href="#home" class="logo">
-        <span class="logo-icon"><i class="fa-solid fa-carrot"></i></span>
-        <span class="logo-text">المينياوي<small>خضار وفاكهة طازة</small></span>
+        <span class="logo-icon logo-img"><img src="assets/logo.png" alt="شعار المنياوي" /></span>
+        <span class="logo-text">المنياوي<small>خضار وفاكهة طازة</small></span>
       </a>
 
       <nav class="nav" id="nav">
@@ -57,7 +57,7 @@
       <div class="hero-content">
         <span class="hero-badge"><i class="fa-solid fa-star"></i> منتجات يوم واحد طازة من المزرعة</span>
         <h1 class="hero-title">خضار وفاكهة <span class="grad-text">طازة يوميًا</span>.. توصلك لحد <span class="grad-text">باب البيت</span></h1>
-        <p class="hero-desc">اطلب دلوقتي من المينياوي.. اختار من أكتر من ٤٠ صنف، وهنوصلك أطعم وأطازة خضار وفاكهة في أقل من ٢٤ ساعة، بجودة عالية وأسعار على قد الإيد.</p>
+        <p class="hero-desc">اطلب دلوقتي من المنياوي.. اختار من أكتر من ٤٠ صنف، وهنوصلك أطعم وأطازة خضار وفاكهة في أقل من ٢٤ ساعة، بجودة عالية وأسعار على قد الإيد.</p>
         <div class="hero-actions">
           <a href="#products" class="btn btn-primary"><i class="fa-solid fa-basket-shopping"></i> اطلب دلوقتي</a>
           <a href="#offers" class="btn btn-ghost"><i class="fa-solid fa-fire"></i> شوف العروض</a>
@@ -112,9 +112,7 @@
       <div class="filters" id="filters">
         <button class="chip active" data-cat="all"><i class="fa-solid fa-border-all"></i> الكل</button>
         <button class="chip" data-cat="veg"><i class="fa-solid fa-carrot"></i> خضار</button>
-        <button class="chip" data-cat="leafy"><i class="fa-solid fa-leaf"></i> خضار ورقية</button>
         <button class="chip" data-cat="fruit"><i class="fa-solid fa-apple-whole"></i> فاكهة</button>
-        <button class="chip" data-cat="seasonal"><i class="fa-solid fa-sun"></i> فاكهة الموسم</button>
       </div>
 
       <div class="products-grid" id="productsGrid"></div>
@@ -132,10 +130,10 @@
       <div class="section-head">
         <span class="section-tag"><i class="fa-solid fa-video"></i> جولة في المحل</span>
         <h2 class="section-title">شوف المحل بنفسك</h2>
-        <p class="section-sub">جولة قصيرة جوه المينياوي.. تشوف بنفسك جودة الخضار والفاكهة</p>
+        <p class="section-sub">جولة قصيرة جوه المنياوي.. تشوف بنفسك جودة الخضار والفاكهة</p>
       </div>
       <div class="video-wrap">
-        <video id="storeVideo" controls preload="metadata" playsinline poster="assets/video-poster.svg">
+        <video id="storeVideo" controls autoplay muted loop playsinline preload="metadata">
           <source src="assets/video.mp4" type="video/mp4" />
           متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉
         </video>
@@ -148,7 +146,7 @@
     <div class="container">
       <div class="section-head">
         <span class="section-tag"><i class="fa-solid fa-fire"></i> عروض اليوم</span>
-        <h2 class="section-title">وفّر أكتر مع عروض المينياوي</h2>
+        <h2 class="section-title">وفّر أكتر مع عروض المنياوي</h2>
         <p class="section-sub">عروض بتتغير كل يوم.. يلا اسبق واطلب</p>
       </div>
       <div class="offers-grid" id="offersGrid"></div>
@@ -159,7 +157,7 @@
   <section class="features section" id="features">
     <div class="container">
       <div class="section-head">
-        <span class="section-tag"><i class="fa-solid fa-award"></i> ليه تختار المينياوي؟</span>
+        <span class="section-tag"><i class="fa-solid fa-award"></i> ليه تختار المنياوي؟</span>
         <h2 class="section-title">لأنك تستاهل الأفضل</h2>
       </div>
       <div class="features-grid">
@@ -226,7 +224,7 @@
         <p>فرقنا جاهز يرد على استفساراتك من الساعة 7 صباحًا لحد 11 مساءً، عشان نضمن إن طلبك يوصلك بالظبط زي ما طلبت.</p>
         <ul class="contact-list">
           <li><a href="tel:01000000000"><span class="contact-ico"><i class="fa-solid fa-phone"></i></span> <span class="site-phone">01000000000</span></a></li>
-          <li><a href="https://wa.me/201030809915" target="_blank" rel="noopener"><span class="contact-ico"><i class="fa-brands fa-whatsapp"></i></span> واتساب المينياوي</a></li>
+          <li><a href="https://wa.me/201030809915" target="_blank" rel="noopener"><span class="contact-ico"><i class="fa-brands fa-whatsapp"></i></span> واتساب المنياوي</a></li>
           <li><a href="https://www.facebook.com/profile.php?id=100076350972892" target="_blank" rel="noopener"><span class="contact-ico"><i class="fa-brands fa-facebook-f"></i></span> صفحتنا على فيسبوك</a></li>
           <li><span class="contact-ico"><i class="fa-solid fa-location-dot"></i></span> التفتيش - شارع الرمد - بجوار برج الزراعيين - 1و2</li>
         </ul>
@@ -248,10 +246,10 @@
     <div class="container footer-inner">
       <div class="footer-col footer-brand">
         <a href="#home" class="logo">
-          <span class="logo-icon"><i class="fa-solid fa-carrot"></i></span>
-          <span class="logo-text">المينياوي<small>خضار وفاكهة طازة</small></span>
+          <span class="logo-icon logo-img"><img src="assets/logo.png" alt="شعار المنياوي" /></span>
+          <span class="logo-text">المنياوي<small>خضار وفاكهة طازة</small></span>
         </a>
-        <p>وجهتك الأولى للخضار والفاكهة الطازة.. جودة عالية، أسعار مناسبة، وتوصيل لحد باب البيت في كل المنيا.</p>
+        <p>وجهتك الأولى للخضار والفاكهة الطازة.. جودة عالية، أسعار مناسبة، وتوصيل لحد باب البيت في كل الفيوم.</p>
         <div class="socials">
           <a href="https://www.facebook.com/profile.php?id=100076350972892" target="_blank" rel="noopener" aria-label="فيسبوك"><i class="fa-brands fa-facebook-f"></i></a>
           <a href="https://wa.me/201030809915" target="_blank" rel="noopener" aria-label="واتساب"><i class="fa-brands fa-whatsapp"></i></a>
@@ -269,9 +267,7 @@
       <div class="footer-col">
         <h4>الأقسام</h4>
         <a href="#products" data-cat-link="veg">خضار</a>
-        <a href="#products" data-cat-link="leafy">خضار ورقية</a>
         <a href="#products" data-cat-link="fruit">فاكهة</a>
-        <a href="#products" data-cat-link="seasonal">فاكهة الموسم</a>
       </div>
       <div class="footer-col">
         <h4>معلومات التواصل</h4>
@@ -282,8 +278,7 @@
     </div>
     <div class="footer-bottom">
       <div class="container">
-        <p>© 2026 المينياوي للخضار والفاكهة. كل الحقوق محفوظة.</p>
-        <p>صُنع بحب <i class="fa-solid fa-heart"></i> في المنيا &nbsp;•&nbsp; <a href="admin.html" title="لوحة التحكم"><i class="fa-solid fa-lock"></i> لوحة التحكم</a></p>
+        <p>© 2026 المنياوي للخضار والفاكهة. كل الحقوق محفوظة.</p>
       </div>
     </div>
   </footer>
@@ -322,10 +317,6 @@
         <div class="form-group">
           <label for="cPhone">رقم التليفون <span>*</span></label>
           <input type="tel" id="cPhone" placeholder="01xxxxxxxxx" required />
-        </div>
-        <div class="form-group">
-          <label for="cCity">المدينة / القرية <span>*</span></label>
-          <input type="text" id="cCity" placeholder="المنيا" required />
         </div>
         <div class="form-group">
           <label for="cAddress">العنوان بالتفصيل <span>*</span></label>

@@ -1,5 +1,5 @@
-/* ============================================================
-   المينياوي | خضار وفاكهة طازة
+﻿/* ============================================================
+   المنياوي | خضار وفاكهة طازة
    ============================================================ */
 :root {
   --green-900: #14532d;
@@ -90,6 +90,9 @@ input, textarea { font-family: inherit; }
   transition: transform 0.3s;
 }
 .logo:hover .logo-icon { transform: rotate(6deg) scale(1.08); }
+.logo-icon.logo-img { background: #fff; padding: 3px; box-shadow: var(--shadow-sm); transform: none; }
+.logo-icon.logo-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+.logo:hover .logo-icon.logo-img { transform: scale(1.06); }
 .logo-text { font-size: 1.45rem; font-weight: 900; color: var(--green-800); line-height: 1.1; display: flex; flex-direction: column; }
 .logo-text small { font-size: 0.68rem; font-weight: 600; color: var(--orange-500); letter-spacing: 0.5px; }
 
@@ -404,6 +407,38 @@ input, textarea { font-family: inherit; }
 }
 .qty-btn:hover { background: var(--green-600); color: #fff; }
 .qty-val { font-weight: 800; color: var(--dark); min-width: 20px; text-align: center; }
+
+.qty-input {
+  width: 46px;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--dark);
+  outline: none;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+.qty-input:focus { background: #fff; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25); }
+
+.qty-tip { font-size: 0.68rem; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+
+.card-actions { display: flex; align-items: center; gap: 8px; }
+
+.fraction-chips { display: flex; gap: 6px; margin-bottom: 10px; }
+.frac-chip {
+  padding: 5px 12px;
+  border-radius: 50px;
+  background: var(--green-50);
+  color: var(--green-700);
+  font-weight: 800;
+  font-size: 0.72rem;
+  border: 1px solid var(--green-100);
+  transition: 0.2s;
+}
+.frac-chip:hover { background: var(--green-600); color: #fff; transform: translateY(-2px); }
 
 .no-results { text-align: center; padding: 60px 0; }
 .no-results span { font-size: 4rem; display: block; margin-bottom: 12px; }

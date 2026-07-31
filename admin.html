@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>لوحة تحكم المينياوي</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>" />
+  <title>لوحة تحكم المنياوي</title>
+  <link rel="icon" href="assets/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
@@ -18,7 +18,7 @@
   <div class="admin-login" id="loginScreen">
     <form class="login-card" id="loginForm">
       <div class="login-icon"><i class="fa-solid fa-lock"></i></div>
-      <h1>لوحة تحكم المينياوي</h1>
+      <h1>لوحة تحكم المنياوي</h1>
       <p>المنطقة دي لصاحب المتجر بس 😉</p>
       <input type="password" id="loginPass" placeholder="كلمة المرور" autocomplete="current-password" required />
       <p class="login-hint" id="loginHint" hidden><i class="fa-solid fa-circle-info"></i> كلمة المرور الافتراضية: <b>minyawi123</b> — غيّرها من الإعدادات بعد أول دخول</p>
@@ -34,8 +34,8 @@
     <header class="admin-header">
       <div class="container admin-header-inner">
         <a href="index.html" class="logo">
-          <span class="logo-icon"><i class="fa-solid fa-carrot"></i></span>
-          <span class="logo-text">المينياوي<small>لوحة التحكم</small></span>
+          <span class="logo-icon logo-img"><img src="assets/logo.png" alt="شعار المنياوي" /></span>
+          <span class="logo-text">المنياوي<small>لوحة التحكم</small></span>
         </a>
         <div class="admin-header-actions">
           <a href="index.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-store"></i> المتجر</a>
@@ -72,9 +72,7 @@
                 <label>القسم <span>*</span></label>
                 <select id="pCat" required>
                   <option value="veg">خضار</option>
-                  <option value="leafy">خضار ورقية</option>
                   <option value="fruit">فاكهة</option>
-                  <option value="seasonal">فاكهة الموسم</option>
                 </select>
               </div>
             </div>
