@@ -96,6 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- عرض العروض ----------
   function renderOffers() {
     const offers = PRODUCTS.filter(p => p.offer);
+    document.getElementById('offers').style.display = offers.length ? '' : 'none';
+    document.querySelector('.nav-link[href="#offers"]').style.display = offers.length ? '' : 'none';
     offersGrid.innerHTML = offers.map((p, i) => {
       const pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
       return `
