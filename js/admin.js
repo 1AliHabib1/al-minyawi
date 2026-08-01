@@ -288,8 +288,38 @@ document.addEventListener('DOMContentLoaded', () => {
     store.phone = ph;
     store.deliveryFee = fee || 0;
     store.video = vid;
+    store.telegramToken = document.getElementById('sTgToken').value.trim();
+    store.telegramChatId = document.getElementById('sTgChatId').value.trim();
     saveAdminStore(store);
     showToast(passChanged ? 'تم حفظ الإعدادات وتغيير كلمة المرور ✅' : 'تم حفظ الإعدادات ✅');
+  });
+
+  // ---------- تيليجرام: حفظ + تجربة ----------
+  document.getElementById('saveSettingsBtn2').addEventListener('click', async () => {
+    const token = document.getElementById('sTgToken').value.trim();
+    const chatId = document.getElementById('sTgChatId').value.trim();
+    if (!token || !chatId) { showToast('اكتب التوكن ومعرف المحادثة الأول', false); return; }
+    store.telegramToken = token;
+    store.telegramChatId = chatId;
+    saveAdminStore(store);
+    showToast('تم حفظ إعدادات تيليجرام ✅');
+  });
+
+  document.getElementById('tgTestBtn').addEventListener('click', async () => {
+    const token = document.getElementById('sTgToken').value.trim();
+    const chatId = document.getElementById('sTgChatId').value.trim();
+    if (!token || !chatId) { showToast('اكتب التوكن ومعرف المحادثة الأول', false); return; }
+    const btn = document.getElementById('tgTestBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+    const ok = await sendTelegramMessage({ token, chatId }, '✅ رسالة تجربة من لوحة تحكم المنياوي — البوت شغال!');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إرسال رسالة تجربة';
+    if (ok) {
+      showToast('اتبعتت الرسالة ✅ افتح تيليجرام وشوف');
+    } else {
+      showToast('الإرسال فشل — راجع التوكن ومعرف المحادثة', false);
+    }
   });
 
   // ---------- رفع فيديو من الجهاز ----------
@@ -344,4 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (store.phone) document.getElementById('sPhone').value = store.phone;
   document.getElementById('sDelivery').value = store.deliveryFee || 25;
   if (store.video) document.getElementById('sVideo').value = store.video;
+  if (store.telegramToken) document.getElementById('sTgToken').value = store.telegramToken;
+  if (store.telegramChatId) document.getElementById('sTgChatId').value = store.telegramChatId;
 });

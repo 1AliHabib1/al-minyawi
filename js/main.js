@@ -420,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function bindCheckoutModal() {
     document.getElementById('closeModal').addEventListener('click', closeCheckoutModal);
-    document.getElementById('checkoutForm').addEventListener('submit', (e) => {
+    document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('cName').value.trim();
       const phone = document.getElementById('cPhone').value.trim();
@@ -443,28 +443,60 @@ document.addEventListener('DOMContentLoaded', () => {
       lastOrderMsg = msg;
       lastWaUrl = buildWaUrl(msg);
       lastWaWebUrl = buildWaWebUrl(msg);
-      window.open(lastWaUrl, '_blank');
+
+      const tg = getTelegramConfig(adminStore);
+      let sentTg = false;
+      if (telegramReady(tg)) {
+        const btn = document.getElementById('sendOrderBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...'; }
+        sentTg = await sendTelegramMessage(tg, msg);
+      }
 
       cart = {};
       saveCart();
 
-      modalInner.innerHTML = `
-        <button class="close-btn modal-close" onclick="closeCheckoutSuccess()" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
-        <div class="modal-head">
-          <span class="modal-emoji">✅</span>
-          <h3>طلبك اتجهز!</h3>
-          <p>لو المحادثة فتحت فاضية.. الرسالة اتناسخَت تلقائيًا — الصقها (Ctrl+V) في الواتساب</p>
-        </div>
-        <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
-        <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ الطلب</button>
-        ${IS_MOBILE ? '' : `<button type="button" class="btn btn-ghost btn-block" onclick="reopenWaWeb()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب ويب (النص بيظهر تلقائي)</button>`}
-        <button type="button" class="btn btn-ghost btn-block" onclick="reopenWa()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب تاني</button>`;
-      navigator.clipboard.writeText(msg).catch(() => {});
-
-      showToast('خطوة أخيرة: افتح الواتساب واضغط إرسال لتأكيد طلبك 📲');
+      if (sentTg) {
+        modalInner.innerHTML = `
+          <button class="close-btn modal-close" onclick="closeCheckoutSuccess()" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+          <div class="modal-head">
+            <span class="modal-emoji">✅</span>
+            <h3>اتوصل طلبك للمحل!</h3>
+            <p>هنراجع طلبك وهنكلمك في أسرع وقت.. متشكرين لثقتك 🤝</p>
+          </div>
+          <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
+          <button type="button" class="btn btn-primary btn-block" onclick="closeCheckoutSuccess()"><i class="fa-solid fa-circle-check"></i> تمام</button>`;
+        showToast('طلبك وصل للمحل ✅');
+      } else {
+        window.open(lastWaUrl, '_blank');
+        modalInner.innerHTML = `
+          <button class="close-btn modal-close" onclick="closeCheckoutSuccess()" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+          <div class="modal-head">
+            <span class="modal-emoji">✅</span>
+            <h3>طلبك اتجهز!</h3>
+            <p>لو المحادثة فتحت فاضية.. الرسالة اتناسخَت تلقائيًا — الصقها (Ctrl+V) في الواتساب</p>
+          </div>
+          <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
+          <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ الطلب</button>
+          ${IS_MOBILE ? '' : `<button type="button" class="btn btn-ghost btn-block" onclick="reopenWaWeb()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب ويب (النص بيظهر تلقائي)</button>`}
+          <button type="button" class="btn btn-ghost btn-block" onclick="reopenWa()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب تاني</button>`;
+        navigator.clipboard.writeText(msg).catch(() => {});
+        showToast('خطوة أخيرة: افتح الواتساب واضغط إرسال لتأكيد طلبك 📲');
+      }
     });
   }
   bindCheckoutModal();
+
+  // ---------- أزرار التأكيد (حسب طريقة الاستقبال) ----------
+  (function setupOrderButtons() {
+    const tg = getTelegramConfig(adminStore);
+    const viaTg = telegramReady(tg);
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const sendOrderBtn = document.getElementById('sendOrderBtn');
+    if (viaTg) {
+      if (checkoutBtn) checkoutBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تأكيد الطلب وإرساله للمحل';
+      if (sendOrderBtn) sendOrderBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إرسال الطلب للمحل';
+    }
+  })();
 
   document.getElementById('checkoutBtn').addEventListener('click', () => {
     if (cartCountTotal() === 0) { showToast('العربة فاضية! ضيف منتجات الأول'); return; }

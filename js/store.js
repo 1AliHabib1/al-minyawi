@@ -6,7 +6,7 @@ const ADMIN_KEY = 'minyawi_admin_v1';
 const DEFAULT_PASSWORD = 'minyawi123';
 
 function defaultStore() {
-  return { products: [], deleted: [], disabled: [], overrides: {}, whatsapp: '', phone: '', deliveryFee: 0, video: '', passHash: '' };
+  return { products: [], deleted: [], disabled: [], overrides: {}, whatsapp: '', phone: '', deliveryFee: 0, video: '', telegramToken: '', telegramChatId: '', passHash: '' };
 }
 
 function getAdminStore() {
@@ -23,6 +23,8 @@ function getAdminStore() {
       phone: typeof s.phone === 'string' ? s.phone : '',
       deliveryFee: typeof s.deliveryFee === 'number' && s.deliveryFee >= 0 ? s.deliveryFee : 0,
       video: typeof s.video === 'string' ? s.video : '',
+      telegramToken: typeof s.telegramToken === 'string' ? s.telegramToken : '',
+      telegramChatId: typeof s.telegramChatId === 'string' ? s.telegramChatId : '',
       passHash: typeof s.passHash === 'string' ? s.passHash : '',
     };
   } catch {
@@ -48,6 +50,25 @@ function buildProducts(store) {
 function getWhatsapp(store) {
   const num = (store.whatsapp || '').replace(/[^0-9]/g, '');
   return num || DEFAULT_WHATSAPP;
+}
+
+function getTelegramConfig(store) {
+  return {
+    token: (store.telegramToken || '').trim() || DEFAULT_TELEGRAM_BOT_TOKEN,
+    chatId: (store.telegramChatId || '').trim() || DEFAULT_TELEGRAM_CHAT_ID,
+  };
+}
+
+function telegramReady(tg) {
+  return !!(tg && tg.token && tg.chatId);
+}
+
+function sendTelegramMessage(tg, text) {
+  return fetch(`https://api.telegram.org/bot${tg.token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: tg.chatId, text, disable_web_page_preview: true }),
+  }).then(r => r.ok).catch(() => false);
 }
 
 async function sha256Hex(text) {
