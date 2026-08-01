@@ -57,10 +57,21 @@
             <input type="hidden" id="editId" />
             <input type="hidden" id="editIsAdmin" />
 
-            <div class="form-group">
-              <label>صورة المنتج (إيموجي)</label>
-              <div class="emoji-picker" id="emojiPicker"></div>
-              <input type="text" id="pEmoji" placeholder="أو اكتب أي إيموجي هنا" maxlength="8" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>صورة المنتج من جهازك (اختياري)</label>
+                <input type="file" id="pImgFile" accept="image/*" />
+                <small class="field-hint">اختار صورة من اللاب أو الموبايل.. لو مفيش صورة هيظهر الإيموجي اللي جنبها</small>
+                <div class="pimg-preview" id="pImgPreview" hidden>
+                  <img id="pImgPreviewImg" alt="معاينة الصورة" />
+                  <button type="button" class="btn btn-ghost btn-sm" id="pImgClear"><i class="fa-solid fa-trash-can"></i> حذف الصورة</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>أو استخدم إيموجي</label>
+                <div class="emoji-picker" id="emojiPicker"></div>
+                <input type="text" id="pEmoji" placeholder="أو اكتب أي إيموجي هنا" maxlength="8" />
+              </div>
             </div>
 
             <div class="form-row">

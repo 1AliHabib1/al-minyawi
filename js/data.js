@@ -78,3 +78,11 @@ const DEFAULT_WHATSAPP = '201030809915';
 const DEFAULT_PHONE = '01030809915';
 const DEFAULT_TELEGRAM_BOT_TOKEN = '8924066575:AAG3twL0AluqsA--EfNTaYfoapu10CyDBW0';
 const DEFAULT_TELEGRAM_CHAT_ID = '8829988925';
+
+// بدائل آمنة (إيموجي قديم) للإيموجي الجديدة اللي متظهرش على بعض أجهزة ويندوز
+const EMOJI_FALLBACKS = {
+  '🫑': '🌶️', // فلفل ألوان
+  '🫘': '🥒', // فاصوليا خضرا
+  '🫛': '🥒', // بسلة
+  '🫐': '🍇', // توت أسود
+};

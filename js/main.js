@@ -8,6 +8,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const PRODUCTS = buildProducts(adminStore);
   const WHATSAPP_NUMBER = getWhatsapp(adminStore);
 
+  // ---------- شكل المنتج: صورة مرفوعة أو إيموجي ----------
+  const visual = p => p.img ? `<img src="${p.img}" alt="${p.name}">` : p.emoji;
+
+  // ---------- استبدال الإيموجي الغير مدعومة على الجهاز (مربعات ويندوز) ----------
+  (function applyEmojiFallbacks() {
+    try {
+      const c = document.createElement('canvas');
+      c.width = c.height = 64;
+      const ctx = c.getContext('2d');
+      if (!ctx) return;
+      function supported(ch) {
+        ctx.clearRect(0, 0, 64, 64);
+        ctx.font = '48px "Segoe UI Emoji", "Noto Color Emoji", serif';
+        ctx.fillText(ch, 4, 52);
+        const d = ctx.getImageData(0, 0, 64, 64).data;
+        let px = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 0) px++;
+        return px / 4096 > 0.18;
+      }
+      PRODUCTS.forEach(p => {
+        if (EMOJI_FALLBACKS[p.emoji] && !supported(p.emoji)) p.emoji = EMOJI_FALLBACKS[p.emoji];
+      });
+    } catch (e) { }
+  })();
+
   // ---------- عناصر عامة ----------
   const productsGrid = document.getElementById('productsGrid');
   const offersGrid = document.getElementById('offersGrid');
@@ -93,7 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <article class="product-card reveal visible" data-id="${p.id}" style="animation-delay:${Math.min(i * 40, 400)}ms; --img-bg:${p.bg}">
         ${p.offer ? '<span class="product-badge">🔥 عرض خاص</span>' : ''}
         ${p.badge === 'new' ? '<span class="product-badge new">✨ جديد</span>' : ''}
-        <div class="product-img">${p.emoji}</div>
+        <span class="added-chip" hidden>✓ اتضافت لعربتك</span>
+        <div class="product-img">${visual(p)}</div>
         <div class="product-cat">${CATEGORY_LABELS[p.cat]}</div>
         <h3 class="product-name">${p.name}</h3>
         <div class="product-unit">${p.unit} ${p.unit === 'حزمة' || p.unit === 'ربطة' ? 'بمزاجك' : ''}</div>
@@ -130,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
       return `
       <div class="offer-card reveal visible" style="animation-delay:${i * 60}ms; --img-bg:${p.bg}">
-        <div class="offer-img">${p.emoji}</div>
+        <div class="offer-img">${visual(p)}</div>
         <div class="offer-info">
           <h3>${p.name} <small style="color:#94a3b8;font-weight:700">(${p.unit})</small></h3>
           <div><span class="offer-old">${p.oldPrice} ج.م</span><span class="offer-new">${p.price} ج.م</span></div>
@@ -275,6 +301,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.value = formatQty(1);
     saveCart();
     showToast(`تمت الإضافة ✅ ${formatQtyText(qty, p.unit)} ${p.name} في عربتك`);
+    const chip = document.querySelector(`.product-card[data-id="${id}"] .added-chip`);
+    if (chip) {
+      chip.hidden = false;
+      clearTimeout(chip._t);
+      chip._t = setTimeout(() => { chip.hidden = true; }, 1600);
+    }
     const btn = document.querySelector(`.product-card[data-id="${id}"] .add-btn`);
     if (btn) {
       btn.classList.add('added');
@@ -333,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!p) return '';
       return `
         <div class="cart-item" style="--img-bg:${p.bg}">
-          <div class="cart-item-img">${p.emoji}</div>
+          <div class="cart-item-img">${visual(p)}</div>
           <div class="cart-item-info">
             <h5>${p.name}</h5>
             <small>${formatQtyText(qty, p.unit)}</small>

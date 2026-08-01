@@ -25,9 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminSearch = document.getElementById('adminSearch');
   const prodCount = document.getElementById('prodCount');
 
-  const EMOJIS = ['🍅','🥒','🥔','🧅','🫑','🌶️','🍆','🥕','🥦','🫘','🫛','🍋','🧄','🍠','🌰','🥬','🌿','🍃','🌱','🍌','🍎','🍏','🍊','🍇','🍐','🍍','🥝','🍑','🥭','🍓','🍉','🍈','🫐'];
+  const EMOJIS = ['🍅','🥒','🥔','🧅','🫑','🌶️','🍆','🥕','🥦','🫘','🫛','🍋','🧄','🍠','🌰','🥬','🌿','🍃','🌱','🍌','🍎','🍏','🍊','🍇','🍐','🍍','🥝','🍑','🥭','🍓','🍉','🍈','🫐'].map(e => (EMOJI_FALLBACKS[e] ? EMOJI_FALLBACKS[e] : e));
 
   let selectedEmoji = '';
+  let pImg = '';
   let listSearch = '';
 
   // ---------- التوست ----------
@@ -54,6 +55,55 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pEmoji').addEventListener('input', (e) => {
     selectedEmoji = e.target.value;
     picker.querySelectorAll('button').forEach(b => b.classList.toggle('selected', b.dataset.emoji === selectedEmoji));
+  });
+
+  // ---------- صورة المنتج من الجهاز (بديل الإيموجي) ----------
+  const pImgFile = document.getElementById('pImgFile');
+  const pImgPreview = document.getElementById('pImgPreview');
+  const pImgPreviewImg = document.getElementById('pImgPreviewImg');
+  const pImgClear = document.getElementById('pImgClear');
+
+  function setPImg(dataUrl) {
+    pImg = dataUrl || '';
+    pImgPreview.hidden = !pImg;
+    if (pImg) pImgPreviewImg.src = pImg;
+  }
+
+  pImgFile.addEventListener('change', () => {
+    const file = pImgFile.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showToast('اختار ملف صورة (png / jpg / webp)', false); pImgFile.value = ''; return; }
+    if (file.size > 8 * 1024 * 1024) { showToast('الصورة أكبر من 8 ميجا — اختار صورة أصغر', false); pImgFile.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const MAX = 480;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.width * scale));
+          c.height = Math.max(1, Math.round(img.height * scale));
+          const ctx = c.getContext('2d');
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          let url = c.toDataURL('image/webp', 0.8);
+          if (!url.startsWith('data:image/webp')) url = c.toDataURL('image/jpeg', 0.85);
+          setPImg(url);
+          showToast('اتضافت الصورة ✅ هتظهر في المتجر بعد الحفظ');
+        } catch {
+          showToast('متعرفناش نعالج الصورة دي — جرب صورة تانية', false);
+        }
+      };
+      img.onerror = () => { showToast('متعرفناش نقرا الصورة — جرب صورة تانية', false); };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  pImgClear.addEventListener('click', () => {
+    setPImg('');
+    pImgFile.value = '';
+    showToast('اتحذفت الصورة — هيرجع المنتج للإيموجي');
   });
 
   // ---------- الدخول ----------
@@ -91,6 +141,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sessionStorage.getItem('minyawi_admin_auth') === '1') openPanel();
 
   // ---------- عرض قائمة المنتجات ----------
+  function itemImg(p) { return p.img ? `<img src="${p.img}" alt="${p.name}">` : p.emoji; }
+
   function renderAdminList() {
     const all = buildProducts(store);
     prodCount.textContent = all.length;
@@ -108,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
     adminList.innerHTML =
       visible.map(p => `
         <div class="admin-item${p.disabled ? ' is-off' : ''}">
-          <div class="admin-item-img" style="--item-bg:${p.bg || '#f0fdf4'}">${p.emoji}</div>
+          <div class="admin-item-img" style="--item-bg:${p.bg || '#f0fdf4'}">${itemImg(p)}</div>
           <div class="admin-item-info">
             <h5>${p.name} ${p.adminAdded ? '<span class="tag-admin">أضفتها</span>' : ''}${p.disabled ? '<span class="tag-disabled">⏸ نفذت مؤقتًا</span>' : ''}</h5>
             <small>${CATEGORY_LABELS[p.cat]} • ${p.unit}${p.offer ? ' • عرض 🔥' : ''}${p.badge === 'new' ? ' • جديد ✨' : ''}</small>
@@ -122,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`).join('') +
       deleted.map(p => `
         <div class="admin-item" style="opacity:.75">
-          <div class="admin-item-img" style="--item-bg:${p.bg || '#f0fdf4'}">${p.emoji}</div>
+          <div class="admin-item-img" style="--item-bg:${p.bg || '#f0fdf4'}">${itemImg(p)}</div>
           <div class="admin-item-info">
             <h5>${p.name} <span class="tag-deleted">محذوفة</span></h5>
             <small>${CATEGORY_LABELS[p.cat]} • ${p.unit}</small>
@@ -150,6 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pEmoji').value = p.emoji;
     selectedEmoji = p.emoji;
     picker.querySelectorAll('button').forEach(b => b.classList.toggle('selected', b.dataset.emoji === p.emoji));
+    pImgFile.value = '';
+    if (p.img) setPImg(p.img); else setPImg('');
 
     editId.value = id;
     editIsAdmin.value = p.adminAdded ? '1' : '0';
@@ -165,6 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
     editId.value = '';
     editIsAdmin.value = '';
     selectedEmoji = '';
+    setPImg('');
+    pImgFile.value = '';
     picker.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
     formTitle.innerHTML = '<i class="fa-solid fa-plus"></i> إضافة منتج جديد';
     formSub.textContent = 'منتجاتك هتظهر في المتجر فورًا';
@@ -193,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
       name, cat, unit, price,
       oldPrice: oldPrice > price ? oldPrice : 0,
       emoji, bg,
+      img: pImg,
       offer,
       badge: isNew ? 'new' : '',
     };
@@ -212,7 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(`تم تعديل "${name}" ✅`);
     }
 
-    saveAdminStore(store);
+    try {
+      saveAdminStore(store);
+    } catch {
+      showToast('المساحة ممتلئة في المتصفح! امسح صور أو منتجات قديمة الأول', false);
+      return;
+    }
     resetForm();
     renderAdminList();
   });
