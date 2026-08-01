@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const EMOJIS = ['🍅','🥒','🥔','🧅','🫑','🌶️','🍆','🥕','🥦','🫘','🫛','🍋','🧄','🍠','🌰','🥬','🌿','🍃','🌱','🍌','🍎','🍏','🍊','🍇','🍐','🍍','🥝','🍑','🥭','🍓','🍉','🍈','🫐'];
 
   let selectedEmoji = '';
+  let listSearch = '';
 
   // ---------- التوست ----------
   let toastTimer;
@@ -90,8 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sessionStorage.getItem('minyawi_admin_auth') === '1') openPanel();
 
   // ---------- عرض قائمة المنتجات ----------
-  let listSearch = '';
-
   function renderAdminList() {
     const all = buildProducts(store);
     prodCount.textContent = all.length;
@@ -248,19 +247,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (wa && !/^\+?\d{9,15}$/.test(wa.replace(/\s/g, ''))) { showToast('رقم الواتساب مش صحيح! مثال: 201000000000', false); return; }
 
-    store.whatsapp = wa;
-    store.phone = ph;
-
+    let passChanged = false;
     if (p1 || p2) {
       if (p1 !== p2) { showToast('كلمتا المرور مش متطابقين', false); return; }
       if (p1.length < 6) { showToast('كلمة المرور لازم 6 أحرف على الأقل', false); return; }
-      store.passHash = await sha256Hex(p1);
+      try {
+        store.passHash = await sha256Hex(p1);
+      } catch {
+        showToast('حصلت مشكلة في حفظ كلمة المرور.. حاول تاني', false);
+        return;
+      }
+      passChanged = true;
       document.getElementById('sPass1').value = '';
       document.getElementById('sPass2').value = '';
     }
 
+    store.whatsapp = wa;
+    store.phone = ph;
     saveAdminStore(store);
-    showToast('تم حفظ الإعدادات ✅');
+    showToast(passChanged ? 'تم حفظ الإعدادات وتغيير كلمة المرور ✅' : 'تم حفظ الإعدادات ✅');
   });
 
   // ---------- تعبئة الحقول الحالية ----------

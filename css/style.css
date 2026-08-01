@@ -256,6 +256,7 @@ input, textarea { font-family: inherit; }
 
 /* ===== شريط المنتجات المتحرك ===== */
 .marquee { background: var(--dark); overflow: hidden; padding: 14px 0; position: relative; z-index: 5; }
+html { overflow-x: hidden; }
 .marquee-track { display: flex; gap: 44px; width: max-content; animation: marquee 30s linear infinite; }
 .marquee-track span { color: #d1fae5; font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
 @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
@@ -872,4 +873,6 @@ html[dir="rtl"] .cart-drawer { transform: translateX(-100%); }
   .product-img { width: 96px; height: 96px; font-size: 3.2rem; }
   .price-now { font-size: 1.05rem; }
   .add-btn { width: 36px; height: 36px; }
+  .card-actions { flex-wrap: wrap; }
+  .product-qty { flex: 1 1 100%; justify-content: space-between; }
 }

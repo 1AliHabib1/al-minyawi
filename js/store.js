@@ -47,8 +47,19 @@ function getWhatsapp(store) {
 }
 
 async function sha256Hex(text) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  if (crypto && crypto.subtle) {
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch { }
+  }
+  let h1 = 5381, h2 = 52711;
+  const t = 'المنياوي#' + text;
+  for (let i = 0; i < t.length; i++) {
+    h1 = (h1 * 33) ^ t.charCodeAt(i);
+    h2 = (h2 * 31) ^ t.charCodeAt(i);
+  }
+  return (h1 >>> 0).toString(16) + (h2 >>> 0).toString(16);
 }
 
 function formatPhone(phone) {

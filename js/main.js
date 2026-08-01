@@ -372,8 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `🏠 العنوان: ${address}\n` +
       (notes ? `📝 ملاحظات: ${notes}\n` : '') +
       `\n🛒 *تفاصيل الطلب:*\n${lines.join('\n')}\n\n` +
-      `💰 *الإجمالي: ${total} ج.م*\n\n` +
-      `شكرًا لاختيارك المنياوي!`;
+      `💰 *الإجمالي: ${total} ج.م*`;
 
     openWhatsapp(msg, '');
 
