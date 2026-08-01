@@ -6,7 +6,7 @@ const ADMIN_KEY = 'minyawi_admin_v1';
 const DEFAULT_PASSWORD = 'minyawi123';
 
 function defaultStore() {
-  return { products: [], deleted: [], overrides: {}, whatsapp: '', phone: '', passHash: '' };
+  return { products: [], deleted: [], disabled: [], overrides: {}, whatsapp: '', phone: '', passHash: '' };
 }
 
 function getAdminStore() {
@@ -17,6 +17,7 @@ function getAdminStore() {
     return {
       products: Array.isArray(s.products) ? s.products : [],
       deleted: Array.isArray(s.deleted) ? s.deleted : [],
+      disabled: Array.isArray(s.disabled) ? s.disabled : [],
       overrides: s.overrides && typeof s.overrides === 'object' ? s.overrides : {},
       whatsapp: typeof s.whatsapp === 'string' ? s.whatsapp : '',
       phone: typeof s.phone === 'string' ? s.phone : '',
@@ -33,11 +34,12 @@ function saveAdminStore(s) {
 
 function buildProducts(store) {
   const deleted = store.deleted || [];
+  const dis = store.disabled || [];
   const ov = store.overrides || {};
   const base = BASE_PRODUCTS
     .filter(p => !deleted.includes(p.id))
-    .map(p => (ov[p.id] ? { ...p, ...ov[p.id] } : p));
-  const added = (store.products || []).map(p => ({ ...p, adminAdded: true }));
+    .map(p => ({ ...(ov[p.id] ? { ...p, ...ov[p.id] } : p), disabled: dis.includes(p.id) }));
+  const added = (store.products || []).map(p => ({ ...p, adminAdded: true, disabled: dis.includes(p.id) }));
   return [...base, ...added];
 }
 

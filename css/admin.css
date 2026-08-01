@@ -240,6 +240,11 @@ body { background: #eef4ee; }
 .icon-btn.del:hover { background: var(--tomato); color: #fff; }
 .icon-btn.restore { background: #eff6ff; color: #2563eb; }
 .icon-btn.restore:hover { background: #2563eb; color: #fff; }
+.icon-btn.off { background: #fef2f2; color: #b45309; }
+.icon-btn.off:hover { background: #b45309; color: #fff; }
+.tag-disabled { background: #fef2f2; color: #b91c1c; font-size: 0.66rem; font-weight: 800; padding: 2px 8px; border-radius: 50px; }
+.admin-item.is-off { opacity: 0.55; }
+.admin-item.is-off .admin-item-img { filter: grayscale(1); }
 
 .admin-empty { text-align: center; color: var(--muted); padding: 30px 0; }
 .admin-empty span { font-size: 2.6rem; display: block; margin-bottom: 8px; }

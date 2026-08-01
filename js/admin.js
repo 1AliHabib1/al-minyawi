@@ -107,14 +107,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     adminList.innerHTML =
       visible.map(p => `
-        <div class="admin-item">
+        <div class="admin-item${p.disabled ? ' is-off' : ''}">
           <div class="admin-item-img" style="--item-bg:${p.bg || '#f0fdf4'}">${p.emoji}</div>
           <div class="admin-item-info">
-            <h5>${p.name} ${p.adminAdded ? '<span class="tag-admin">أضفتها</span>' : ''}</h5>
+            <h5>${p.name} ${p.adminAdded ? '<span class="tag-admin">أضفتها</span>' : ''}${p.disabled ? '<span class="tag-disabled">⏸ نفذت مؤقتًا</span>' : ''}</h5>
             <small>${CATEGORY_LABELS[p.cat]} • ${p.unit}${p.offer ? ' • عرض 🔥' : ''}${p.badge === 'new' ? ' • جديد ✨' : ''}</small>
             <div class="admin-item-price">${p.price} ج.م${p.oldPrice ? ` <small style="text-decoration:line-through;color:#94a3b8">${p.oldPrice} ج.م</small>` : ''}</div>
           </div>
           <div class="admin-item-actions">
+            <button class="icon-btn off" onclick="toggleActive('${p.id}')" title="${p.disabled ? 'إرجاع المنتج للمتجر' : 'تعطيل مؤقت (نفذت الكمية)'}"><i class="fa-solid ${p.disabled ? 'fa-play' : 'fa-circle-pause'}"></i></button>
             <button class="icon-btn edit" onclick="editProduct('${p.id}')" title="تعديل"><i class="fa-solid fa-pen"></i></button>
             <button class="icon-btn del" onclick="deleteProduct('${p.id}')" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
           </div>
@@ -236,6 +237,23 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAdminList();
     const p = BASE_PRODUCTS.find(x => x.id === id);
     showToast(`تمت استعادة "${p ? p.name : ''}" للمتجر ✅`);
+  };
+
+  // ---------- التعطيل المؤقت (نفذت الكمية) ----------
+  window.toggleActive = (id) => {
+    const p = buildProducts(store).find(x => x.id === id);
+    if (!p) return;
+    if (store.disabled.includes(id)) {
+      store.disabled = store.disabled.filter(x => x !== id);
+      saveAdminStore(store);
+      renderAdminList();
+      showToast(`تم إرجاع "${p.name}" للمتجر ✅`);
+    } else {
+      store.disabled.push(id);
+      saveAdminStore(store);
+      renderAdminList();
+      showToast(`تم تعطيل "${p.name}" مؤقتًا ⏸`);
+    }
   };
 
   // ---------- الإعدادات ----------

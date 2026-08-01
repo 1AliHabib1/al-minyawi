@@ -34,8 +34,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- العربة ----------
   function loadCart() {
-    try { return JSON.parse(localStorage.getItem('minyawi_cart')) || {}; }
-    catch { return {}; }
+    try {
+      const c = JSON.parse(localStorage.getItem('minyawi_cart')) || {};
+      const dis = new Set(PRODUCTS.filter(p => p.disabled).map(p => p.id));
+      Object.keys(c).forEach(id => { if (dis.has(id)) delete c[id]; });
+      return c;
+    } catch { return {}; }
   }
   function saveCart() {
     localStorage.setItem('minyawi_cart', JSON.stringify(cart));
@@ -56,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const list = PRODUCTS.filter(p => {
       const okCat = currentCat === 'all' || p.cat === currentCat;
       const okSearch = !searchTerm || p.name.includes(searchTerm);
-      return okCat && okSearch;
+      return okCat && okSearch && !p.disabled;
     });
 
     noResults.hidden = list.length > 0;
@@ -95,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- عرض العروض ----------
   function renderOffers() {
-    const offers = PRODUCTS.filter(p => p.offer);
+    const offers = PRODUCTS.filter(p => p.offer && !p.disabled);
     document.getElementById('offers').style.display = offers.length ? '' : 'none';
     document.querySelector('.nav-link[href="#offers"]').style.display = offers.length ? '' : 'none';
     offersGrid.innerHTML = offers.map((p, i) => {
@@ -239,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addToCart = (id) => {
     const p = PRODUCTS.find(x => x.id === id);
+    if (!p || p.disabled) return;
     const qty = pickQty[id] || 1;
     cart[id] = Math.round(((cart[id] || 0) + qty) * 4) / 4;
     pickQty[id] = 1;
@@ -477,16 +482,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- فورم التواصل ----------
   document.getElementById('contactForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    showToast('تم إرسال رسالتك! هنرد عليك في أقرب وقت 💬');
+    const name = document.getElementById('cfName').value.trim();
+    const phone = document.getElementById('cfPhone').value.trim();
+    const msg = document.getElementById('cfMsg').value.trim();
+    const text = `📨 *رسالة جديدة من الموقع*\n\n👤 الاسم: ${name}\n📱 التليفون: ${phone}\n\n💬 الرسالة:\n${msg}`;
+    openWhatsapp(text, 'خطوة أخيرة: افتح الواتساب واضغط إرسال 📲');
     e.target.reset();
   });
 
-  // ---------- رقم التليفون المعروض ----------
-  if (adminStore.phone) {
-    const shown = formatPhone(adminStore.phone);
-    document.querySelectorAll('.site-phone').forEach(el => { el.textContent = shown; });
-    document.querySelectorAll('a[href^="tel:"]').forEach(a => { a.href = 'tel:' + shown; });
-  }
+  // ---------- رقم التليفون والواتساب المعروضان ----------
+  // يُستخدم الرقم الافتراضي من الكود لو مفيش إعداد محفوظ على هذا الجهاز
+  const shown = formatPhone(adminStore.phone || DEFAULT_PHONE);
+  document.querySelectorAll('.site-phone').forEach(el => { el.textContent = shown; });
+  document.querySelectorAll('a[href^="tel:"]').forEach(a => { a.href = 'tel:' + shown; });
+  document.querySelectorAll('a[href^="https://wa.me/"]').forEach(a => { a.href = `https://wa.me/${WHATSAPP_NUMBER}`; });
 
   // ---------- تشغيل ----------
   renderProducts();
