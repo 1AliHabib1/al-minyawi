@@ -630,7 +630,16 @@ html { overflow-x: clip; }
 .footer-bottom .fa-heart { color: var(--tomato); }
 
 /* ===== عربة التسوق ===== */
-.cart-overlay, .modal-overlay {
+.cart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 1150;
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+}
+.modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.55);
@@ -664,6 +673,9 @@ html[dir="rtl"] .cart-drawer { transform: translateX(-100%); }
   padding: 20px 24px;
   border-bottom: 1px solid #eef2f7;
 }
+.cart-header-actions { display: flex; align-items: center; gap: 8px; }
+.cart-clear { display: inline-flex; align-items: center; gap: 5px; background: none; border: 1px solid #e74c3c; color: #e74c3c; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: 0.25s; }
+.cart-clear:hover { background: #e74c3c; color: #fff; }
 .cart-header h3 { color: var(--dark); font-size: 1.15rem; font-weight: 800; }
 .cart-header h3 i { color: var(--green-600); margin-inline-end: 8px; }
 .close-btn {
@@ -802,6 +814,7 @@ html[dir="rtl"] .cart-drawer { transform: translateX(-100%); }
   white-space: nowrap;
 }
 .toast.show { transform: translate(-50%, 0); }
+.toast { pointer-events: none; }
 .toast i {
   width: 24px; height: 24px;
   border-radius: 50%;

@@ -333,6 +333,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('cartBtn').addEventListener('click', openCart);
   document.getElementById('closeCart').addEventListener('click', closeCart);
   cartOverlay.addEventListener('click', closeCart);
+  document.getElementById('cartClear').addEventListener('click', () => {
+    cart = {};
+    saveCart();
+    showToast('اتفضت العربة 🧹');
+  });
 
   // ---------- التأكيد والطلب ----------
   function buildCartLines() {
