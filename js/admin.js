@@ -324,12 +324,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const ph = document.getElementById('sPhone').value.trim();
     const fee = parseFloat(document.getElementById('sDelivery').value);
     const vid = document.getElementById('sVideo').value.trim();
+    const sheet = document.getElementById('sSheet').value.trim();
     const p1 = document.getElementById('sPass1').value;
     const p2 = document.getElementById('sPass2').value;
 
     if (wa && !/^\+?\d{9,15}$/.test(wa.replace(/\s/g, ''))) { showToast('رقم الواتساب مش صحيح! مثال: 201000000000', false); return; }
     if (isNaN(fee) || fee < 0) { showToast('اكتب رسوم توصيل صحيحة (0 أو أكتر)', false); return; }
     if (vid && !/^https?:\/\//.test(vid)) { showToast('رابط الفيديو لازم يبدأ بـ https://', false); return; }
+    if (sheet && !/^https:\/\//.test(sheet)) { showToast('رابط الشيت لازم يبدأ بـ https://', false); return; }
 
     let passChanged = false;
     if (p1 || p2) {
@@ -350,10 +352,29 @@ document.addEventListener('DOMContentLoaded', () => {
     store.phone = ph;
     store.deliveryFee = fee || 0;
     store.video = vid;
+    store.sheetUrl = sheet;
     store.telegramToken = document.getElementById('sTgToken').value.trim();
     store.telegramChatId = document.getElementById('sTgChatId').value.trim();
     saveAdminStore(store);
     showToast(passChanged ? 'تم حفظ الإعدادات وتغيير كلمة المرور ✅' : 'تم حفظ الإعدادات ✅');
+  });
+
+  // ---------- الشيت: تجربة ----------
+  document.getElementById('sheetTestBtn').addEventListener('click', async () => {
+    const url = document.getElementById('sSheet').value.trim();
+    if (!url) { showToast('حط رابط الشيت الأول', false); return; }
+    if (!/^https:\/\//.test(url)) { showToast('الرابط لازم يبدأ بـ https://', false); return; }
+    const btn = document.getElementById('sheetTestBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+    const ok = await sendToSheet(url, { ref: 'TEST', name: 'رسالة تجربة', phone: '-', address: '-', notes: 'تجربة من لوحة التحكم', delivery: 0, total: 0, lines: '-' });
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-table"></i> تجربة الشيت';
+    if (ok) {
+      showToast('وصلت الشيت ✅ افتح الشيت وشوف آخر صف');
+    } else {
+      showToast('الإرسال فشل — تأكد من نشر الرابط: Anyone + Execute as Me', false);
+    }
   });
 
   // ---------- تيليجرام: حفظ + تجربة ----------
@@ -436,6 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (store.phone) document.getElementById('sPhone').value = store.phone;
   document.getElementById('sDelivery').value = store.deliveryFee || 25;
   if (store.video) document.getElementById('sVideo').value = store.video;
+  if (store.sheetUrl) document.getElementById('sSheet').value = store.sheetUrl;
   if (store.telegramToken) document.getElementById('sTgToken').value = store.telegramToken;
   if (store.telegramChatId) document.getElementById('sTgChatId').value = store.telegramChatId;
 });

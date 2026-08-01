@@ -492,6 +492,17 @@ document.addEventListener('DOMContentLoaded', () => {
       lastWaUrl = buildWaUrl(msg);
       lastWaWebUrl = buildWaWebUrl(msg);
 
+      // تسجيل الطلب في الشيت (في الخلفية — مش بيأثر على التيليجرام/الواتساب)
+      if (adminStore.sheetUrl) {
+        sendToSheet(adminStore.sheetUrl, {
+          ref: orderRef,
+          name, phone, address, notes,
+          lines: lines.join('\n'),
+          delivery: DELIVERY_FEE,
+          total,
+        });
+      }
+
       const tg = getTelegramConfig(adminStore);
       let sentTg = false;
       if (telegramReady(tg)) {

@@ -189,6 +189,14 @@
             <input type="password" id="sPass1" placeholder="كلمة المرور الجديدة (6 أحرف على الأقل)" />
             <input type="password" id="sPass2" placeholder="أكتبها تاني للتأكيد" />
           </div>
+          <div class="form-group">
+            <label>رابط الشيت (Google Sheets)</label>
+            <input type="url" id="sSheet" placeholder="https://script.google.com/macros/s/.../exec" dir="ltr" />
+            <small class="field-hint">كل طلب هيتسجل صف في الشيت تلقائيًا (جمب التيليجرام والواتساب) — خطوات التركيب جاهزة في ملف <b>google-sheets-apps-script.txt</b> في مجلد الموقع</small>
+            <div class="form-row" style="margin-top:8px;gap:8px">
+              <button type="button" class="btn btn-ghost btn-sm" id="sheetTestBtn" style="width:auto"><i class="fa-solid fa-table"></i> تجربة الشيت</button>
+            </div>
+          </div>
         </div>
         <div class="form-actions">
           <button class="btn btn-primary" id="saveSettingsBtn"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>
