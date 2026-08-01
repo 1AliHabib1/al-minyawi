@@ -274,7 +274,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.querySelector(`.product-card[data-id="${id}"] .qty-input`);
     if (el) el.value = formatQty(1);
     saveCart();
-    showToast(`ضيفنا ${formatQtyText(qty, p.unit)} من ${p.name} 🛒`);
+    showToast(`تمت الإضافة ✅ ${formatQtyText(qty, p.unit)} ${p.name} في عربتك`);
+    const btn = document.querySelector(`.product-card[data-id="${id}"] .add-btn`);
+    if (btn) {
+      btn.classList.add('added');
+      const old = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+      setTimeout(() => { btn.classList.remove('added'); btn.innerHTML = old; }, 1300);
+    }
     cartCount.classList.remove('bump');
     void cartCount.offsetWidth;
     cartCount.classList.add('bump');
@@ -288,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const next = Math.round(((cart[id] || 0) + d * step) * 4) / 4;
     if (next < min) {
       delete cart[id];
-      showToast(`شيلنا ${p.name} من العربة`);
+      showToast(`شيلنا ${p.name} من العربة`, false);
     } else {
       cart[id] = next;
     }
@@ -299,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const p = PRODUCTS.find(x => x.id === id);
     delete cart[id];
     saveCart();
-    showToast(`شيلنا ${p.name} من العربة`);
+    showToast(`شيلنا ${p.name} من العربة`, false);
   };
 
   // ---------- تحديث واجهة العربة ----------
@@ -429,10 +436,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const lines = buildCartLines();
       const total = cartSum() + DELIVERY_FEE;
-      const orderNo = String(Date.now()).slice(-5);
+      const orderNo = (parseInt(localStorage.getItem('minyawi_order_count') || '0', 10) || 0) + 1;
+      localStorage.setItem('minyawi_order_count', String(orderNo));
+      let deviceCode = localStorage.getItem('minyawi_device_code');
+      if (!deviceCode) {
+        deviceCode = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(Math.random() * 10);
+        localStorage.setItem('minyawi_device_code', deviceCode);
+      }
+      const orderRef = '#' + orderNo + '-' + deviceCode;
 
       const msg =
-        `🧾 *رقم الطلب: #${orderNo}*\n` +
+        `🧾 *رقم الطلب: ${orderRef}*\n` +
         `🍅 *طلب جديد من المنياوي* 🍅\n\n` +
         `👤 الاسم: ${name}\n` +
         `📱 التليفون: ${phone}\n` +
@@ -465,11 +479,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3>اتوصل طلبك للمحل!</h3>
             <p>احتفظ برقم الطلب.. وهنراجع طلبك ونكلمك في أسرع وقت 🤝</p>
           </div>
-          <div class="order-no">🧾 رقم طلبك: <strong>#${orderNo}</strong></div>
+          <div class="order-no">🧾 رقم طلبك: <strong>${orderRef}</strong></div>
           <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
           <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ تفاصيل الطلب</button>
           <button type="button" class="btn btn-ghost btn-block" onclick="closeCheckoutSuccess()"><i class="fa-solid fa-circle-check"></i> تمام</button>`;
-        showToast(`وصل طلبك رقم #${orderNo} للمحل ✅`);
+        showToast(`وصل طلبك رقم ${orderRef} للمحل ✅`);
       } else {
         window.open(lastWaUrl, '_blank');
         modalInner.innerHTML = `
@@ -479,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3>طلبك اتجهز!</h3>
             <p>لو المحادثة فتحت فاضية.. الرسالة اتناسخَت تلقائيًا — الصقها (Ctrl+V) في الواتساب</p>
           </div>
-          <div class="order-no">🧾 رقم طلبك: <strong>#${orderNo}</strong></div>
+          <div class="order-no">🧾 رقم طلبك: <strong>${orderRef}</strong></div>
           <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
           <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ الطلب</button>
           ${IS_MOBILE ? '' : `<button type="button" class="btn btn-ghost btn-block" onclick="reopenWaWeb()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب ويب (النص بيظهر تلقائي)</button>`}
@@ -504,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
 
   document.getElementById('checkoutBtn').addEventListener('click', () => {
-    if (cartCountTotal() === 0) { showToast('العربة فاضية! ضيف منتجات الأول'); return; }
+    if (cartCountTotal() === 0) { showToast('العربة فاضية! ضيف منتجات الأول', false); return; }
     closeCart();
     checkoutModal.classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -536,11 +550,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- التوست ----------
   let toastTimer;
-  function showToast(msg) {
+  function showToast(msg, success = true) {
     toastMsg.textContent = msg;
+    toast.classList.toggle('success', success);
+    toast.querySelector('i').className = success ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation';
     toast.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
   }
 
   // ---------- البحث والفلترة ----------

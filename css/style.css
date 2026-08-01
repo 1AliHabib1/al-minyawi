@@ -390,6 +390,10 @@ html { overflow-x: clip; }
 }
 .add-btn:hover { transform: scale(1.12) rotate(90deg); }
 .add-btn:active { transform: scale(0.9); }
+.add-btn.added { background: #16a34a; transform: scale(1.15); }
+.add-btn.added:hover { transform: scale(1.15); }
+@keyframes popOk { 0% { transform: scale(0.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.add-btn.added i { animation: popOk 0.4s ease; }
 
 .product-qty {
   display: flex;
@@ -833,6 +837,11 @@ html[dir="rtl"] .cart-drawer { transform: translateX(-100%); }
   box-shadow: var(--shadow-lg);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
+}
+.toast.success {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  font-size: 1rem;
+  box-shadow: 0 12px 30px rgba(22, 163, 74, 0.45);
 }
 .toast.show { transform: translate(-50%, 0); }
 .toast { pointer-events: none; }
