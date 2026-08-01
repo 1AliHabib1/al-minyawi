@@ -429,8 +429,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const lines = buildCartLines();
       const total = cartSum() + DELIVERY_FEE;
+      const orderNo = String(Date.now()).slice(-5);
 
       const msg =
+        `🧾 *رقم الطلب: #${orderNo}*\n` +
         `🍅 *طلب جديد من المنياوي* 🍅\n\n` +
         `👤 الاسم: ${name}\n` +
         `📱 التليفون: ${phone}\n` +
@@ -461,11 +463,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="modal-head">
             <span class="modal-emoji">✅</span>
             <h3>اتوصل طلبك للمحل!</h3>
-            <p>هنراجع طلبك وهنكلمك في أسرع وقت.. متشكرين لثقتك 🤝</p>
+            <p>احتفظ برقم الطلب.. وهنراجع طلبك ونكلمك في أسرع وقت 🤝</p>
           </div>
+          <div class="order-no">🧾 رقم طلبك: <strong>#${orderNo}</strong></div>
           <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
-          <button type="button" class="btn btn-primary btn-block" onclick="closeCheckoutSuccess()"><i class="fa-solid fa-circle-check"></i> تمام</button>`;
-        showToast('طلبك وصل للمحل ✅');
+          <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ تفاصيل الطلب</button>
+          <button type="button" class="btn btn-ghost btn-block" onclick="closeCheckoutSuccess()"><i class="fa-solid fa-circle-check"></i> تمام</button>`;
+        showToast(`وصل طلبك رقم #${orderNo} للمحل ✅`);
       } else {
         window.open(lastWaUrl, '_blank');
         modalInner.innerHTML = `
@@ -475,6 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3>طلبك اتجهز!</h3>
             <p>لو المحادثة فتحت فاضية.. الرسالة اتناسخَت تلقائيًا — الصقها (Ctrl+V) في الواتساب</p>
           </div>
+          <div class="order-no">🧾 رقم طلبك: <strong>#${orderNo}</strong></div>
           <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
           <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ الطلب</button>
           ${IS_MOBILE ? '' : `<button type="button" class="btn btn-ghost btn-block" onclick="reopenWaWeb()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب ويب (النص بيظهر تلقائي)</button>`}
