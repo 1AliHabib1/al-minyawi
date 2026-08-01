@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let searchTerm = '';
   let cart = loadCart();
   const pickQty = {};
+  const DELIVERY_FEE = adminStore.deliveryFee > 0 ? adminStore.deliveryFee : 25;
 
   // ---------- العربة ----------
   function loadCart() {
@@ -319,8 +320,10 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
     }).join('');
 
-    const total = cartSum();
+    const total = cartSum() + DELIVERY_FEE;
     cartTotal.textContent = total + ' ج.م';
+    const dEl = document.querySelector('.cart-delivery strong');
+    if (dEl) dEl.textContent = DELIVERY_FEE + ' ج.م';
   }
 
   // ---------- فتح/غلق العربة ----------
@@ -339,53 +342,99 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ---------- شاشة النجاح (شبكة أمان لو الواتساب فتح فاضي) ----------
+  const modalInner = document.querySelector('#checkoutModal .modal');
+  const originalModalHTML = modalInner.innerHTML;
+  let lastOrderMsg = '';
+  let lastWaUrl = '';
+
+  window.closeCheckoutSuccess = () => closeCheckoutModal();
+  window.copyOrder = async () => {
+    if (!lastOrderMsg) return;
+    try {
+      await navigator.clipboard.writeText(lastOrderMsg);
+      showToast('اتنسخ الطلب ✅ الصقه في الواتساب');
+    } catch {
+      const ta = document.getElementById('orderMsg');
+      if (ta) { ta.focus(); ta.select(); document.execCommand('copy'); showToast('اتنسخ الطلب ✅ الصقه في الواتساب'); }
+    }
+  };
+  window.reopenWa = () => { if (lastWaUrl) window.open(lastWaUrl, '_blank'); };
+
+  function restoreCheckoutModal() {
+    if (modalInner.innerHTML !== originalModalHTML) {
+      modalInner.innerHTML = originalModalHTML;
+      bindCheckoutModal();
+    }
+  }
+  function closeCheckoutModal() {
+    checkoutModal.classList.remove('show');
+    document.body.style.overflow = '';
+    restoreCheckoutModal();
+  }
+
   function openWhatsapp(msg, note) {
-    window.location.href = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`;
+    const url = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`;
+    const win = window.open(url, '_blank');
+    if (!win) window.location.href = url;
     if (note) showToast(note);
   }
 
+  function bindCheckoutModal() {
+    document.getElementById('closeModal').addEventListener('click', closeCheckoutModal);
+    document.getElementById('checkoutForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('cName').value.trim();
+      const phone = document.getElementById('cPhone').value.trim();
+      const address = document.getElementById('cAddress').value.trim();
+      const notes = document.getElementById('cNotes').value.trim();
+
+      const lines = buildCartLines();
+      const total = cartSum() + DELIVERY_FEE;
+
+      const msg =
+        `🍅 *طلب جديد من المنياوي* 🍅\n\n` +
+        `👤 الاسم: ${name}\n` +
+        `📱 التليفون: ${phone}\n` +
+        `🏠 العنوان: ${address}\n` +
+        (notes ? `📝 ملاحظات: ${notes}\n` : '') +
+        `\n🛒 *تفاصيل الطلب:*\n${lines.join('\n')}\n` +
+        `\n🛵 *التوصيل: ${DELIVERY_FEE} ج.م*\n` +
+        `💰 *الإجمالي: ${total} ج.م*`;
+
+      lastOrderMsg = msg;
+      lastWaUrl = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`;
+      const win = window.open(lastWaUrl, '_blank');
+      if (!win) window.location.href = lastWaUrl;
+
+      cart = {};
+      saveCart();
+
+      modalInner.innerHTML = `
+        <button class="close-btn modal-close" onclick="closeCheckoutSuccess()" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+        <div class="modal-head">
+          <span class="modal-emoji">✅</span>
+          <h3>طلبك اتجهز!</h3>
+          <p>لو المحادثة فتحت فاضية.. انسخ الطلب والصقه في الواتساب</p>
+        </div>
+        <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
+        <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ الطلب</button>
+        <button type="button" class="btn btn-ghost btn-block" onclick="reopenWa()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب تاني</button>`;
+      navigator.clipboard.writeText(msg).catch(() => {});
+
+      showToast('خطوة أخيرة: افتح الواتساب واضغط إرسال لتأكيد طلبك 📲');
+    });
+  }
+  bindCheckoutModal();
+
   document.getElementById('checkoutBtn').addEventListener('click', () => {
     if (cartCountTotal() === 0) { showToast('العربة فاضية! ضيف منتجات الأول'); return; }
+    closeCart();
     checkoutModal.classList.add('show');
     document.body.style.overflow = 'hidden';
   });
-  document.getElementById('closeModal').addEventListener('click', () => {
-    checkoutModal.classList.remove('show');
-    document.body.style.overflow = '';
-  });
   checkoutModal.addEventListener('click', (e) => {
-    if (e.target === checkoutModal) {
-      checkoutModal.classList.remove('show');
-      document.body.style.overflow = '';
-    }
-  });
-
-  document.getElementById('checkoutForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('cName').value.trim();
-    const phone = document.getElementById('cPhone').value.trim();
-    const address = document.getElementById('cAddress').value.trim();
-    const notes = document.getElementById('cNotes').value.trim();
-
-    const lines = buildCartLines();
-    const total = cartSum();
-
-    const msg =
-      `🍅 *طلب جديد من المنياوي* 🍅\n\n` +
-      `👤 الاسم: ${name}\n` +
-      `📱 التليفون: ${phone}\n` +
-      `🏠 العنوان: ${address}\n` +
-      (notes ? `📝 ملاحظات: ${notes}\n` : '') +
-      `\n🛒 *تفاصيل الطلب:*\n${lines.join('\n')}\n\n` +
-      `💰 *الإجمالي: ${total} ج.م*`;
-
-    openWhatsapp(msg, '');
-
-    cart = {};
-    saveCart();
-    checkoutModal.classList.remove('show');
-    document.body.style.overflow = '';
-    showToast('خطوة أخيرة: افتح الواتساب واضغط إرسال لتأكيد طلبك 📲');
+    if (e.target === checkoutModal) closeCheckoutModal();
   });
 
   // ---------- الوصول السري للوحة التحكم ----------
@@ -476,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- إغلاق المودال بزر Escape ----------
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeCart(); checkoutModal.classList.remove('show'); document.body.style.overflow = ''; }
+    if (e.key === 'Escape') { closeCart(); closeCheckoutModal(); }
   });
 
   // ---------- فورم التواصل ----------

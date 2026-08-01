@@ -635,7 +635,7 @@ html { overflow-x: clip; }
   inset: 0;
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(4px);
-  z-index: 1100;
+  z-index: 1250;
   opacity: 0;
   visibility: hidden;
   transition: 0.3s;
@@ -725,6 +725,10 @@ html[dir="rtl"] .cart-drawer { transform: translateX(-100%); }
 .cart-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .cart-total span { font-weight: 700; color: var(--muted); }
 .cart-total strong { font-size: 1.35rem; font-weight: 900; color: var(--green-700); }
+.cart-delivery { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 8px; border-bottom: 1px dashed #e2e8f0; }
+.cart-delivery span { font-weight: 700; color: var(--muted); font-size: 0.92rem; }
+.cart-delivery span i { color: var(--orange-500); margin-inline-end: 6px; }
+.cart-delivery strong { font-weight: 900; color: var(--dark); font-size: 1rem; }
 
 /* ===== المودال ===== */
 .modal-overlay { display: grid; place-items: center; padding: 20px; }
@@ -759,6 +763,25 @@ html[dir="rtl"] .cart-drawer { transform: translateX(-100%); }
   color: var(--dark);
 }
 .form-group input:focus, .form-group textarea:focus { border-color: var(--green-500); box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12); }
+
+/* ===== شاشة نجاح الطلب ===== */
+.order-msg {
+  width: 100%;
+  min-height: 170px;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  line-height: 1.9;
+  resize: vertical;
+  color: var(--dark);
+  background: #f8fafc;
+  margin-bottom: 12px;
+  outline: none;
+}
+.order-msg:focus { border-color: var(--green-500); }
+.modal .btn-ghost { border: 2px solid #cbd5e1; color: var(--green-700); }
+.modal .btn-ghost:hover { border-color: var(--green-500); background: var(--green-50); }
 
 /* ===== التوست ===== */
 .toast {

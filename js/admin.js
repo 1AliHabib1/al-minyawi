@@ -260,10 +260,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
     const wa = document.getElementById('sWhatsapp').value.trim();
     const ph = document.getElementById('sPhone').value.trim();
+    const fee = parseFloat(document.getElementById('sDelivery').value);
     const p1 = document.getElementById('sPass1').value;
     const p2 = document.getElementById('sPass2').value;
 
     if (wa && !/^\+?\d{9,15}$/.test(wa.replace(/\s/g, ''))) { showToast('رقم الواتساب مش صحيح! مثال: 201000000000', false); return; }
+    if (isNaN(fee) || fee < 0) { showToast('اكتب رسوم توصيل صحيحة (0 أو أكتر)', false); return; }
 
     let passChanged = false;
     if (p1 || p2) {
@@ -282,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     store.whatsapp = wa;
     store.phone = ph;
+    store.deliveryFee = fee || 0;
     saveAdminStore(store);
     showToast(passChanged ? 'تم حفظ الإعدادات وتغيير كلمة المرور ✅' : 'تم حفظ الإعدادات ✅');
   });
@@ -289,4 +292,5 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- تعبئة الحقول الحالية ----------
   if (store.whatsapp) document.getElementById('sWhatsapp').value = store.whatsapp;
   if (store.phone) document.getElementById('sPhone').value = store.phone;
+  document.getElementById('sDelivery').value = store.deliveryFee || 25;
 });
