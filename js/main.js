@@ -32,6 +32,29 @@ document.addEventListener('DOMContentLoaded', () => {
   let cart = loadCart();
   const pickQty = {};
   const DELIVERY_FEE = adminStore.deliveryFee > 0 ? adminStore.deliveryFee : 25;
+  const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+  // ---------- فيديو المحل (مرفوع من الجهاز ← رابط الإعدادات ← الافتراضي) ----------
+  (async function setupVideo() {
+    const wrap = document.querySelector('#about-video .video-wrap');
+    if (!wrap) return;
+    try {
+      const blob = await getVideoBlob();
+      if (blob) {
+        const vurl = URL.createObjectURL(blob);
+        wrap.innerHTML = `<video controls playsinline preload="metadata"><source src="${vurl}" type="${blob.type || 'video/mp4'}">متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉</video>`;
+        return;
+      }
+    } catch (e) { }
+    const url = (adminStore.video || '').trim();
+    if (!url) return;
+    const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+    if (yt) {
+      wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${yt[1]}?rel=0" title="فيديو المحل" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    } else {
+      wrap.innerHTML = `<video controls playsinline preload="metadata"><source src="${url}" type="video/mp4">متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉</video>`;
+    }
+  })();
 
   // ---------- العربة ----------
   function loadCart() {
@@ -352,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const originalModalHTML = modalInner.innerHTML;
   let lastOrderMsg = '';
   let lastWaUrl = '';
+  let lastWaWebUrl = '';
 
   window.closeCheckoutSuccess = () => closeCheckoutModal();
   window.copyOrder = async () => {
@@ -365,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   window.reopenWa = () => { if (lastWaUrl) window.open(lastWaUrl, '_blank'); };
+  window.reopenWaWeb = () => { if (lastWaWebUrl) window.open(lastWaWebUrl, '_blank'); };
 
   function restoreCheckoutModal() {
     if (modalInner.innerHTML !== originalModalHTML) {
@@ -378,12 +403,20 @@ document.addEventListener('DOMContentLoaded', () => {
     restoreCheckoutModal();
   }
 
+  function buildWaUrl(msg) {
+    return `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`;
+  }
+  function buildWaWebUrl(msg) {
+    return `https://web.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`;
+  }
+
   function openWhatsapp(msg, note) {
-    const url = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`;
+    const url = buildWaUrl(msg);
     const win = window.open(url, '_blank');
     if (!win) window.location.href = url;
     if (note) showToast(note);
   }
+  window.buildWaUrl = buildWaUrl;
 
   function bindCheckoutModal() {
     document.getElementById('closeModal').addEventListener('click', closeCheckoutModal);
@@ -408,9 +441,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `💰 *الإجمالي: ${total} ج.م*`;
 
       lastOrderMsg = msg;
-      lastWaUrl = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`;
-      const win = window.open(lastWaUrl, '_blank');
-      if (!win) window.location.href = lastWaUrl;
+      lastWaUrl = buildWaUrl(msg);
+      lastWaWebUrl = buildWaWebUrl(msg);
+      window.open(lastWaUrl, '_blank');
 
       cart = {};
       saveCart();
@@ -420,10 +453,11 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="modal-head">
           <span class="modal-emoji">✅</span>
           <h3>طلبك اتجهز!</h3>
-          <p>لو المحادثة فتحت فاضية.. انسخ الطلب والصقه في الواتساب</p>
+          <p>لو المحادثة فتحت فاضية.. الرسالة اتناسخَت تلقائيًا — الصقها (Ctrl+V) في الواتساب</p>
         </div>
         <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
         <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ الطلب</button>
+        ${IS_MOBILE ? '' : `<button type="button" class="btn btn-ghost btn-block" onclick="reopenWaWeb()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب ويب (النص بيظهر تلقائي)</button>`}
         <button type="button" class="btn btn-ghost btn-block" onclick="reopenWa()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب تاني</button>`;
       navigator.clipboard.writeText(msg).catch(() => {});
 

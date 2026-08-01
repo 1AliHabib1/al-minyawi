@@ -261,11 +261,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const wa = document.getElementById('sWhatsapp').value.trim();
     const ph = document.getElementById('sPhone').value.trim();
     const fee = parseFloat(document.getElementById('sDelivery').value);
+    const vid = document.getElementById('sVideo').value.trim();
     const p1 = document.getElementById('sPass1').value;
     const p2 = document.getElementById('sPass2').value;
 
     if (wa && !/^\+?\d{9,15}$/.test(wa.replace(/\s/g, ''))) { showToast('رقم الواتساب مش صحيح! مثال: 201000000000', false); return; }
     if (isNaN(fee) || fee < 0) { showToast('اكتب رسوم توصيل صحيحة (0 أو أكتر)', false); return; }
+    if (vid && !/^https?:\/\//.test(vid)) { showToast('رابط الفيديو لازم يبدأ بـ https://', false); return; }
 
     let passChanged = false;
     if (p1 || p2) {
@@ -285,12 +287,61 @@ document.addEventListener('DOMContentLoaded', () => {
     store.whatsapp = wa;
     store.phone = ph;
     store.deliveryFee = fee || 0;
+    store.video = vid;
     saveAdminStore(store);
     showToast(passChanged ? 'تم حفظ الإعدادات وتغيير كلمة المرور ✅' : 'تم حفظ الإعدادات ✅');
   });
+
+  // ---------- رفع فيديو من الجهاز ----------
+  const videoUploadStatus = document.getElementById('videoUploadStatus');
+  const clearVideoBtn = document.getElementById('clearVideoBtn');
+
+  async function refreshVideoStatus() {
+    try {
+      const blob = await getVideoBlob();
+      if (blob) {
+        videoUploadStatus.textContent = `✅ فيديو مرفوع من الجهاز (${(blob.size / 1024 / 1024).toFixed(1)} ميجا) — ظاهر في المتجر`;
+        videoUploadStatus.style.color = '#16a34a';
+      } else {
+        videoUploadStatus.textContent = 'مفيش فيديو مرفوع — الافتراضي أو الرابط هو الشغال';
+        videoUploadStatus.style.color = '#64748b';
+      }
+      clearVideoBtn.hidden = !blob;
+    } catch {
+      videoUploadStatus.textContent = 'متعرفش حالة الفيديو المرفوع';
+    }
+  }
+
+  document.getElementById('sVideoFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('video/')) { showToast('اختار ملف فيديو صح (mp4 مثلًا)', false); return; }
+    if (file.size > 100 * 1024 * 1024) { showToast('الفيديو أكبر من 100 ميجا — قلل حجمه', false); return; }
+    try {
+      await saveVideoBlob(file);
+      showToast('اترفع الفيديو ✅ هيظهر في المتجر دلوقتي');
+    } catch {
+      showToast('حصلت مشكلة في حفظ الفيديو (المساحة أو الحجم)', false);
+    }
+    refreshVideoStatus();
+  });
+
+  clearVideoBtn.addEventListener('click', async () => {
+    try {
+      await clearVideoBlob();
+      showToast('اتحذف الفيديو المرفوع');
+    } catch {
+      showToast('حصلت مشكلة في الحذف', false);
+    }
+    refreshVideoStatus();
+  });
+
+  refreshVideoStatus();
 
   // ---------- تعبئة الحقول الحالية ----------
   if (store.whatsapp) document.getElementById('sWhatsapp').value = store.whatsapp;
   if (store.phone) document.getElementById('sPhone').value = store.phone;
   document.getElementById('sDelivery').value = store.deliveryFee || 25;
+  if (store.video) document.getElementById('sVideo').value = store.video;
 });

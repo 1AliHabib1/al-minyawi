@@ -6,7 +6,7 @@ const ADMIN_KEY = 'minyawi_admin_v1';
 const DEFAULT_PASSWORD = 'minyawi123';
 
 function defaultStore() {
-  return { products: [], deleted: [], disabled: [], overrides: {}, whatsapp: '', phone: '', deliveryFee: 0, passHash: '' };
+  return { products: [], deleted: [], disabled: [], overrides: {}, whatsapp: '', phone: '', deliveryFee: 0, video: '', passHash: '' };
 }
 
 function getAdminStore() {
@@ -22,6 +22,7 @@ function getAdminStore() {
       whatsapp: typeof s.whatsapp === 'string' ? s.whatsapp : '',
       phone: typeof s.phone === 'string' ? s.phone : '',
       deliveryFee: typeof s.deliveryFee === 'number' && s.deliveryFee >= 0 ? s.deliveryFee : 0,
+      video: typeof s.video === 'string' ? s.video : '',
       passHash: typeof s.passHash === 'string' ? s.passHash : '',
     };
   } catch {
@@ -69,4 +70,48 @@ function formatPhone(phone) {
   const n = (phone || '').replace(/[^0-9]/g, '');
   if (n.length === 11 && n.startsWith('01')) return '0' + n.slice(1);
   return phone || '';
+}
+
+/* ============================================================
+   تخزين فيديو المحل المرفوع (IndexedDB — داخل الجهاز نفسه)
+   ============================================================ */
+
+const VIDEO_DB = 'minyawi_video';
+const VIDEO_STORE = 'files';
+const VIDEO_KEY = 'shop_video';
+
+function openVideoDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(VIDEO_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(VIDEO_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function saveVideoBlob(blob) {
+  return openVideoDB().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(VIDEO_STORE, 'readwrite');
+    tx.objectStore(VIDEO_STORE).put(blob, VIDEO_KEY);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  }));
+}
+
+function getVideoBlob() {
+  return openVideoDB().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(VIDEO_STORE, 'readonly');
+    const req = tx.objectStore(VIDEO_STORE).get(VIDEO_KEY);
+    req.onsuccess = () => { db.close(); resolve(req.result || null); };
+    req.onerror = () => { db.close(); reject(req.error); };
+  }));
+}
+
+function clearVideoBlob() {
+  return openVideoDB().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(VIDEO_STORE, 'readwrite');
+    tx.objectStore(VIDEO_STORE).delete(VIDEO_KEY);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  }));
 }

@@ -464,6 +464,12 @@ html { overflow-x: clip; }
   aspect-ratio: 16 / 9;
   background: var(--dark);
 }
+.video-wrap iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
 
 /* ===== العروض ===== */
 .offers { background: linear-gradient(180deg, #fff 0%, var(--green-50) 100%); }
