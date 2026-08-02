@@ -6,7 +6,7 @@ const ADMIN_KEY = 'minyawi_admin_v1';
 const DEFAULT_PASSWORD = 'minyawi123';
 
 function defaultStore() {
-  return { products: [], deleted: [], disabled: [], overrides: {}, whatsapp: '', phone: '', deliveryFee: 0, video: '', telegramToken: '', telegramChatId: '', sheetUrl: '', passHash: '' };
+  return { products: [], deleted: [], disabled: [], overrides: {}, whatsapp: '', phone: '', deliveryFee: 0, video: '', telegramToken: '', telegramChatId: '', sheetUrl: DEFAULT_SHEET_URL, passHash: '' };
 }
 
 function getAdminStore() {
@@ -25,7 +25,7 @@ function getAdminStore() {
       video: typeof s.video === 'string' ? s.video : '',
       telegramToken: typeof s.telegramToken === 'string' ? s.telegramToken : '',
       telegramChatId: typeof s.telegramChatId === 'string' ? s.telegramChatId : '',
-      sheetUrl: typeof s.sheetUrl === 'string' ? s.sheetUrl : '',
+      sheetUrl: (typeof s.sheetUrl === 'string' ? s.sheetUrl : '').trim() || DEFAULT_SHEET_URL,
       passHash: typeof s.passHash === 'string' ? s.passHash : '',
     };
   } catch {

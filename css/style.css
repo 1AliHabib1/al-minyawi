@@ -836,7 +836,7 @@ html[dir="rtl"] .cart-drawer { transform: translateX(-100%); }
 /* ===== التوست ===== */
 .toast {
   position: fixed;
-  bottom: 30px; inset-inline-start: 50%;
+  bottom: 30px; left: 50%;
   transform: translate(-50%, 120px);
   background: var(--dark);
   color: #fff;
