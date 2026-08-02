@@ -72,12 +72,19 @@ function fetchWithTimeout(url, opts, ms) {
   return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
 }
 
-function sendTelegramMessage(tg, text) {
-  return fetchWithTimeout(`https://api.telegram.org/bot${tg.token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: tg.chatId, text, disable_web_page_preview: true }),
-  }, 8000).then(r => r.ok).catch(() => false);
+async function sendTelegramMessage(tg, text) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const start = Date.now();
+    const ok = await fetchWithTimeout(`https://api.telegram.org/bot${tg.token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: tg.chatId, text, disable_web_page_preview: true }),
+    }, 10000).then(r => r.ok).catch(() => false);
+    if (ok) return true;
+    if (attempt === 0 && Date.now() - start >= 3000) break;
+    await new Promise(r => setTimeout(r, 1500));
+  }
+  return false;
 }
 
 /* ============================================================
