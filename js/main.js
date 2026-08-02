@@ -533,47 +533,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      const tg = getTelegramConfig(adminStore);
-      let sentTg = false;
-      if (telegramReady(tg)) {
-        const btn = document.getElementById('sendOrderBtn');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...'; }
-        sentTg = await sendTelegramMessage(tg, msg);
-      }
-
       cart = {};
       saveCart();
 
-      if (sentTg) {
-        modalInner.innerHTML = `
-          <button class="close-btn modal-close" onclick="closeCheckoutSuccess()" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
-          <div class="modal-head">
-            <span class="modal-emoji">✅</span>
-            <h3>اتوصل طلبك للمحل!</h3>
-            <p>احتفظ برقم الطلب.. وهنراجع طلبك ونكلمك في أسرع وقت 🤝</p>
-          </div>
-          <div class="order-no">🧾 رقم طلبك: <strong>${orderRef}</strong></div>
-          <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
-          <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ تفاصيل الطلب</button>
-          <button type="button" class="btn btn-ghost btn-block" onclick="closeCheckoutSuccess()"><i class="fa-solid fa-circle-check"></i> تمام</button>`;
-        showToast(`وصل طلبك رقم ${orderRef} للمحل ✅`);
-      } else {
-        window.open(lastWaUrl, '_blank');
-        modalInner.innerHTML = `
-          <button class="close-btn modal-close" onclick="closeCheckoutSuccess()" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
-          <div class="modal-head">
-            <span class="modal-emoji">✅</span>
-            <h3>طلبك اتجهز!</h3>
-            <p>لو المحادثة فتحت فاضية.. الرسالة اتناسخَت تلقائيًا — الصقها (Ctrl+V) في الواتساب</p>
-          </div>
-          <div class="order-no">🧾 رقم طلبك: <strong>${orderRef}</strong></div>
-          <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
-          <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ الطلب</button>
-          ${IS_MOBILE ? '' : `<button type="button" class="btn btn-ghost btn-block" onclick="reopenWaWeb()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب ويب (النص بيظهر تلقائي)</button>`}
-          <button type="button" class="btn btn-ghost btn-block" onclick="reopenWa()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب تاني</button>`;
-        navigator.clipboard.writeText(msg).catch(() => {});
-        showToast('خطوة أخيرة: افتح الواتساب واضغط إرسال لتأكيد طلبك 📲');
-      }
+      modalInner.innerHTML = `
+        <button class="close-btn modal-close" onclick="closeCheckoutSuccess()" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+        <div class="modal-head">
+          <span class="modal-emoji">📨</span>
+          <h3>طلبك اتجهز!</h3>
+          <p id="orderStatus">جاري إرسال الطلب للمحل...</p>
+        </div>
+        <div class="order-no">🧾 رقم طلبك: <strong>${orderRef}</strong></div>
+        <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
+        <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ تفاصيل الطلب</button>
+        <button type="button" class="btn btn-ghost btn-block" onclick="closeCheckoutSuccess()"><i class="fa-solid fa-circle-check"></i> تمام</button>
+        <button type="button" class="btn btn-ghost btn-block" onclick="reopenWa()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب</button>`;
+      navigator.clipboard.writeText(msg).catch(() => {});
+      showToast(`وصل طلبك رقم ${orderRef} — بنرسله للمحل ⏳`);
+
+      const tg = getTelegramConfig(adminStore);
+      (async () => {
+        let ok = false;
+        if (telegramReady(tg)) ok = await sendTelegramMessage(tg, msg);
+        const status = document.getElementById('orderStatus');
+        if (ok) {
+          if (status) status.textContent = 'وصل طلبك للمحل ✅ وهنكلمك في أسرع وقت 🤝';
+          showToast(`وصل طلبك رقم ${orderRef} للمحل ✅`);
+        } else {
+          if (status) status.textContent = 'التيليجرام مش مستجيب — ابعت الرسالة على الواتساب 📲';
+          showToast('خطوة أخيرة: افتح الواتساب واضغط إرسال لتأكيد طلبك 📲', false);
+          try { window.open(lastWaUrl, '_blank'); } catch { }
+        }
+      })();
     });
   }
   bindCheckoutModal();

@@ -66,12 +66,18 @@ function telegramReady(tg) {
   return !!(tg && tg.token && tg.chatId);
 }
 
+function fetchWithTimeout(url, opts, ms) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
+}
+
 function sendTelegramMessage(tg, text) {
-  return fetch(`https://api.telegram.org/bot${tg.token}/sendMessage`, {
+  return fetchWithTimeout(`https://api.telegram.org/bot${tg.token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: tg.chatId, text, disable_web_page_preview: true }),
-  }).then(r => r.ok).catch(() => false);
+  }, 8000).then(r => r.ok).catch(() => false);
 }
 
 /* ============================================================
@@ -82,7 +88,7 @@ function sendToSheet(url, data) {
   if (!url) return Promise.resolve(false);
   const body = new URLSearchParams();
   Object.entries(data || {}).forEach(([k, v]) => body.append(k, v === undefined || v === null ? '' : String(v)));
-  return fetch(url, { method: 'POST', body }).then(r => r.ok).catch(() => false);
+  return fetchWithTimeout(url, { method: 'POST', body }, 10000).then(r => r.ok).catch(() => false);
 }
 
 /* ============================================================

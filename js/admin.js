@@ -127,6 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
   async function openPanel() {
     loginScreen.style.display = 'none';
     panel.hidden = false;
+    renderAdminList();
+    fillSettings();
     const cloud = await cloudLoad();
     if (cloud) {
       if (Array.isArray(cloud.products)) store.products = cloud.products;
@@ -144,9 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof cloud.telegramChatId === 'string') store.telegramChatId = cloud.telegramChatId;
       saveAdminStore(store);
       fillSettings();
+      renderAdminList();
       showToast('اتحملت البيانات من السحابة ✅');
     }
-    renderAdminList();
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
