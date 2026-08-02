@@ -83,6 +83,83 @@ function sendToSheet(url, data) {
   return fetch(url, { method: 'POST', body }).then(r => r.ok).catch(() => false);
 }
 
+/* ============================================================
+   السحابة (Firebase Firestore) — مزامنة المنتجات والإعدادات
+   ============================================================ */
+
+function fbBase() {
+  return `https://firestore.googleapis.com/v1/projects/${DEFAULT_FIREBASE_PROJECT}/databases/(default)/documents`;
+}
+
+async function cloudLoadImgs() {
+  try {
+    const res = await fetch(`${fbBase()}/imgs?pageSize=5000`);
+    if (!res.ok) return null;
+    const list = await res.json();
+    const out = {};
+    (list.documents || []).forEach(d => {
+      const id = d.name.split('/').pop();
+      if (d.fields && d.fields.img && d.fields.img.stringValue) out[id] = d.fields.img.stringValue;
+    });
+    return out;
+  } catch { return null; }
+}
+
+async function cloudLoad() {
+  if (!DEFAULT_FIREBASE_PROJECT) return null;
+  try {
+    const res = await fetch(`${fbBase()}/state/store`);
+    if (!res.ok) return null;
+    const doc = await res.json();
+    const store = JSON.parse(doc.fields.store.stringValue || 'null');
+    if (!store || typeof store !== 'object') return null;
+    const imgs = await cloudLoadImgs();
+    if (imgs) {
+      (store.products || []).forEach(p => { if (imgs[p.id]) p.img = imgs[p.id]; });
+      Object.keys(store.overrides || {}).forEach(id => {
+        const o = store.overrides[id];
+        if (o && o.img) { o.img = imgs[id]; } else if (o && imgs[id]) { o.img = imgs[id]; }
+      });
+    }
+    return store;
+  } catch { return null; }
+}
+
+async function cloudSave(store) {
+  if (!DEFAULT_FIREBASE_PROJECT) return false;
+  try {
+    const clean = JSON.parse(JSON.stringify(store));
+    delete clean.passHash;
+    const del = new Set(clean.deleted || []);
+    const imgs = {};
+    (clean.products || []).forEach(p => { if (!del.has(p.id) && p.img) { imgs[p.id] = p.img; delete p.img; } });
+    Object.keys(clean.overrides || {}).forEach(id => {
+      if (del.has(id)) { delete clean.overrides[id]; return; }
+      const o = clean.overrides[id];
+      if (o && o.img) { imgs[id] = o.img; delete o.img; }
+    });
+    const res = await fetch(`${fbBase()}/state/store?updateMask.fieldPaths=store`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { store: { stringValue: JSON.stringify(clean) } } }),
+    });
+    if (!res.ok) return false;
+    await Promise.all(Object.entries(imgs).map(([id, img]) =>
+      fetch(`${fbBase()}/imgs/${id}?updateMask.fieldPaths=img`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { img: { stringValue: img } } }),
+      }).catch(() => {})));
+    const prev = await cloudLoadImgs();
+    if (prev) {
+      const stale = Object.keys(prev).filter(id => !imgs[id]);
+      await Promise.all(stale.map(id =>
+        fetch(`${fbBase()}/imgs/${id}`, { method: 'DELETE' }).catch(() => {})));
+    }
+    return true;
+  } catch { return false; }
+}
+
 async function sha256Hex(text) {
   if (crypto && crypto.subtle) {
     try {

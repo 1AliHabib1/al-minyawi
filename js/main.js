@@ -5,14 +5,14 @@
 document.addEventListener('DOMContentLoaded', () => {
   // ---------- البيانات من المخزن (منتجات المسؤول المضافة) ----------
   const adminStore = getAdminStore();
-  const PRODUCTS = buildProducts(adminStore);
+  let PRODUCTS = buildProducts(adminStore);
   const WHATSAPP_NUMBER = getWhatsapp(adminStore);
 
   // ---------- شكل المنتج: صورة مرفوعة أو إيموجي ----------
   const visual = p => p.img ? `<img src="${p.img}" alt="${p.name}">` : p.emoji;
 
   // ---------- استبدال الإيموجي الغير مدعومة على الجهاز (مربعات ويندوز) ----------
-  (function applyEmojiFallbacks() {
+  function applyEmojiFallbacks(list) {
     try {
       const c = document.createElement('canvas');
       c.width = c.height = 64;
@@ -27,10 +27,37 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 3; i < d.length; i += 4) if (d[i] > 0) px++;
         return px / 4096 > 0.18;
       }
-      PRODUCTS.forEach(p => {
+      list.forEach(p => {
         if (EMOJI_FALLBACKS[p.emoji] && !supported(p.emoji)) p.emoji = EMOJI_FALLBACKS[p.emoji];
       });
     } catch (e) { }
+  }
+  applyEmojiFallbacks(PRODUCTS);
+
+  // ---------- السحابة: جلب أحدث المنتجات والإعدادات ----------
+  (async function syncCloud() {
+    const cloud = await cloudLoad();
+    if (!cloud) return;
+    if (Array.isArray(cloud.products)) adminStore.products = cloud.products;
+    if (cloud.overrides && typeof cloud.overrides === 'object') adminStore.overrides = cloud.overrides;
+    if (Array.isArray(cloud.deleted)) adminStore.deleted = cloud.deleted;
+    if (Array.isArray(cloud.disabled)) adminStore.disabled = cloud.disabled;
+    if (typeof cloud.whatsapp === 'string') adminStore.whatsapp = cloud.whatsapp;
+    if (typeof cloud.phone === 'string') adminStore.phone = cloud.phone;
+    if (typeof cloud.deliveryFee === 'number') adminStore.deliveryFee = cloud.deliveryFee;
+    if (typeof cloud.video === 'string') adminStore.video = cloud.video;
+    if (typeof cloud.sheetUrl === 'string' && cloud.sheetUrl) adminStore.sheetUrl = cloud.sheetUrl;
+    if (typeof cloud.telegramToken === 'string') adminStore.telegramToken = cloud.telegramToken;
+    if (typeof cloud.telegramChatId === 'string') adminStore.telegramChatId = cloud.telegramChatId;
+    saveAdminStore(adminStore);
+    PRODUCTS = buildProducts(adminStore);
+    applyEmojiFallbacks(PRODUCTS);
+    DELIVERY_FEE = adminStore.deliveryFee > 0 ? adminStore.deliveryFee : 25;
+    renderProducts();
+    renderOffers();
+    updateCartUI();
+    applyPhone();
+    setupVideo();
   })();
 
   // ---------- عناصر عامة ----------
@@ -56,11 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let searchTerm = '';
   let cart = loadCart();
   const pickQty = {};
-  const DELIVERY_FEE = adminStore.deliveryFee > 0 ? adminStore.deliveryFee : 25;
+  let DELIVERY_FEE = adminStore.deliveryFee > 0 ? adminStore.deliveryFee : 25;
   const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
   // ---------- فيديو المحل (مرفوع من الجهاز ← رابط الإعدادات ← الافتراضي) ----------
-  (async function setupVideo() {
+  async function setupVideo() {
     const wrap = document.querySelector('#about-video .video-wrap');
     if (!wrap) return;
     try {
@@ -79,7 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       wrap.innerHTML = `<video controls playsinline preload="metadata"><source src="${url}" type="video/mp4">متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉</video>`;
     }
-  })();
+  }
+  setupVideo();
 
   // ---------- العربة ----------
   function loadCart() {
@@ -676,10 +704,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- رقم التليفون والواتساب المعروضان ----------
   // يُستخدم الرقم الافتراضي من الكود لو مفيش إعداد محفوظ على هذا الجهاز
-  const shown = formatPhone(adminStore.phone || DEFAULT_PHONE);
-  document.querySelectorAll('.site-phone').forEach(el => { el.textContent = shown; });
-  document.querySelectorAll('a[href^="tel:"]').forEach(a => { a.href = 'tel:' + shown; });
-  document.querySelectorAll('a[href^="https://wa.me/"]').forEach(a => { a.href = `https://wa.me/${WHATSAPP_NUMBER}`; });
+  function applyPhone() {
+    const shown = formatPhone(adminStore.phone || DEFAULT_PHONE);
+    document.querySelectorAll('.site-phone').forEach(el => { el.textContent = shown; });
+    document.querySelectorAll('a[href^="tel:"]').forEach(a => { a.href = 'tel:' + shown; });
+    document.querySelectorAll('a[href^="https://wa.me/"]').forEach(a => { a.href = `https://wa.me/${WHATSAPP_NUMBER}`; });
+  }
+  applyPhone();
 
   // ---------- تشغيل ----------
   renderProducts();

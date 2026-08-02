@@ -124,9 +124,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  function openPanel() {
+  async function openPanel() {
     loginScreen.style.display = 'none';
     panel.hidden = false;
+    const cloud = await cloudLoad();
+    if (cloud) {
+      if (Array.isArray(cloud.products)) store.products = cloud.products;
+      if (cloud.overrides && typeof cloud.overrides === 'object') store.overrides = cloud.overrides;
+      if (Array.isArray(cloud.deleted)) store.deleted = cloud.deleted;
+      if (Array.isArray(cloud.disabled)) store.disabled = cloud.disabled;
+      if (typeof cloud.whatsapp === 'string') store.whatsapp = cloud.whatsapp;
+      if (typeof cloud.phone === 'string') store.phone = cloud.phone;
+      if (typeof cloud.deliveryFee === 'number') store.deliveryFee = cloud.deliveryFee;
+      if (typeof cloud.video === 'string') store.video = cloud.video;
+      if (typeof cloud.sheetUrl === 'string') store.sheetUrl = cloud.sheetUrl;
+      if (typeof cloud.telegramToken === 'string') store.telegramToken = cloud.telegramToken;
+      if (typeof cloud.telegramChatId === 'string') store.telegramChatId = cloud.telegramChatId;
+      saveAdminStore(store);
+      fillSettings();
+      showToast('اتحملت البيانات من السحابة ✅');
+    }
     renderAdminList();
   }
 
@@ -186,6 +203,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   adminSearch.addEventListener('input', (e) => { listSearch = e.target.value.trim(); renderAdminList(); });
+
+  // ---------- المزامنة مع السحابة بعد كل تغيير ----------
+  function pushCloud(silent) {
+    cloudSave(store).then(ok => {
+      if (!ok && !silent) showToast('اتحفظ على جهازك بس — السحابة مش متاحة دلوقتي', false);
+    });
+  }
 
   // ---------- الحفظ (إضافة / تعديل) ----------
   window.editProduct = (id) => {
@@ -275,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('المساحة ممتلئة في المتصفح! امسح صور أو منتجات قديمة الأول', false);
       return;
     }
+    pushCloud();
     resetForm();
     renderAdminList();
   });
@@ -289,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!store.deleted.includes(id)) store.deleted.push(id);
     }
     saveAdminStore(store);
+    pushCloud();
     renderAdminList();
     showToast(`تم حذف "${p.name}" من المتجر`);
   };
@@ -296,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.restoreProduct = (id) => {
     store.deleted = store.deleted.filter(x => x !== id);
     saveAdminStore(store);
+    pushCloud();
     renderAdminList();
     const p = BASE_PRODUCTS.find(x => x.id === id);
     showToast(`تمت استعادة "${p ? p.name : ''}" للمتجر ✅`);
@@ -308,11 +335,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (store.disabled.includes(id)) {
       store.disabled = store.disabled.filter(x => x !== id);
       saveAdminStore(store);
+      pushCloud();
       renderAdminList();
       showToast(`تم إرجاع "${p.name}" للمتجر ✅`);
     } else {
       store.disabled.push(id);
       saveAdminStore(store);
+      pushCloud();
       renderAdminList();
       showToast(`تم تعطيل "${p.name}" مؤقتًا ⏸`);
     }
@@ -356,6 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     store.telegramToken = document.getElementById('sTgToken').value.trim();
     store.telegramChatId = document.getElementById('sTgChatId').value.trim();
     saveAdminStore(store);
+    pushCloud();
     showToast(passChanged ? 'تم حفظ الإعدادات وتغيير كلمة المرور ✅' : 'تم حفظ الإعدادات ✅');
   });
 
@@ -385,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
     store.telegramToken = token;
     store.telegramChatId = chatId;
     saveAdminStore(store);
+    pushCloud();
     showToast('تم حفظ إعدادات تيليجرام ✅');
   });
 
@@ -453,11 +484,14 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshVideoStatus();
 
   // ---------- تعبئة الحقول الحالية ----------
-  if (store.whatsapp) document.getElementById('sWhatsapp').value = store.whatsapp;
-  if (store.phone) document.getElementById('sPhone').value = store.phone;
-  document.getElementById('sDelivery').value = store.deliveryFee || 25;
-  if (store.video) document.getElementById('sVideo').value = store.video;
-  if (store.sheetUrl) document.getElementById('sSheet').value = store.sheetUrl;
-  if (store.telegramToken) document.getElementById('sTgToken').value = store.telegramToken;
-  if (store.telegramChatId) document.getElementById('sTgChatId').value = store.telegramChatId;
+  function fillSettings() {
+    if (store.whatsapp) document.getElementById('sWhatsapp').value = store.whatsapp;
+    if (store.phone) document.getElementById('sPhone').value = store.phone;
+    document.getElementById('sDelivery').value = store.deliveryFee || 25;
+    if (store.video) document.getElementById('sVideo').value = store.video;
+    if (store.sheetUrl) document.getElementById('sSheet').value = store.sheetUrl;
+    if (store.telegramToken) document.getElementById('sTgToken').value = store.telegramToken;
+    if (store.telegramChatId) document.getElementById('sTgChatId').value = store.telegramChatId;
+  }
+  fillSettings();
 });
