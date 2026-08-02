@@ -80,6 +80,8 @@ const DEFAULT_TELEGRAM_BOT_TOKEN = '8924066575:AAG3twL0AluqsA--EfNTaYfoapu10CyDB
 const DEFAULT_TELEGRAM_CHAT_ID = '8829988925';
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyolS_Nc8Rf_wJtgS3oquNUDfc6Wf4htbNxzDK0L_eiGccyz2dbTeUYjyvOVwiydd0K/exec';
 const DEFAULT_FIREBASE_PROJECT = 'al-minyawi';
+const DEFAULT_ORDER_KEY = 'minyawi-orders';
+const DEFAULT_HOURS = 'مفتوح يوميًا من 9 صباحًا حتى 11 مساءً';
 
 // بدائل آمنة (إيموجي قديم) للإيموجي الجديدة اللي متظهرش على بعض أجهزة ويندوز
 const EMOJI_FALLBACKS = {

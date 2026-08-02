@@ -138,6 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof cloud.deliveryFee === 'number') store.deliveryFee = cloud.deliveryFee;
       if (typeof cloud.video === 'string') store.video = cloud.video;
       if (typeof cloud.sheetUrl === 'string') store.sheetUrl = cloud.sheetUrl;
+      if (typeof cloud.orderKey === 'string' && cloud.orderKey) store.orderKey = cloud.orderKey;
+      if (typeof cloud.hours === 'string' && cloud.hours) store.hours = cloud.hours;
       if (typeof cloud.telegramToken === 'string') store.telegramToken = cloud.telegramToken;
       if (typeof cloud.telegramChatId === 'string') store.telegramChatId = cloud.telegramChatId;
       saveAdminStore(store);
@@ -382,6 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
     store.deliveryFee = fee || 0;
     store.video = vid;
     store.sheetUrl = sheet;
+    store.orderKey = document.getElementById('sOrderKey').value.trim() || DEFAULT_ORDER_KEY;
+    store.hours = document.getElementById('sHours').value.trim() || DEFAULT_HOURS;
     store.telegramToken = document.getElementById('sTgToken').value.trim();
     store.telegramChatId = document.getElementById('sTgChatId').value.trim();
     saveAdminStore(store);
@@ -483,6 +487,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
   refreshVideoStatus();
 
+  // ---------- الأوردرات الأخيرة من الشيت ----------
+  function escHtml(t) {
+    return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function fmtDate(d) {
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return escHtml(d);
+    return dt.toLocaleString('ar-EG', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  async function loadOrders() {
+    const url = (store.sheetUrl || '').trim();
+    const key = (store.orderKey || '').trim() || DEFAULT_ORDER_KEY;
+    const list = document.getElementById('ordersList');
+    const btn = document.getElementById('ordersRefreshBtn');
+    if (!url) { showToast('حط رابط الشيت الأول', false); return; }
+    btn.disabled = true;
+    list.innerHTML = '<div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الأوردرات...</div>';
+    try {
+      const res = await fetch(`${url}?k=${encodeURIComponent(key)}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('http');
+      const data = await res.json();
+      if (!data || data.ok !== true) throw new Error(data && data.error === 'wrong_key' ? 'wrong_key' : 'bad');
+      const orders = data.orders || [];
+      if (!orders.length) {
+        list.innerHTML = '<div class="orders-empty">مفيش أوردرات لسه 🍃 أول ما يجي طلب هيظهر هنا</div>';
+      } else {
+        list.innerHTML = orders.map(o => `
+          <div class="order-item">
+            <div class="order-item-top">
+              <b>${escHtml(o.ref || '—')}</b>
+              <span>${fmtDate(o.date)}</span>
+            </div>
+            <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
+            ${o.address ? `<div class="order-item-line"><i class="fa-solid fa-location-dot"></i> ${escHtml(o.address)}</div>` : ''}
+            ${o.notes ? `<div class="order-item-line"><i class="fa-solid fa-note-sticky"></i> ${escHtml(o.notes)}</div>` : ''}
+            ${o.lines ? `<div class="order-item-lines">${escHtml(o.lines).split('\n').map(l => `<div>${l}</div>`).join('')}</div>` : ''}
+            <div class="order-item-bottom">
+              <span>التوصيل ${escHtml(o.delivery || '0')} ج.م</span>
+              <b>الإجمالي ${escHtml(o.total || '0')} ج.م</b>
+            </div>
+          </div>`).join('');
+      }
+    } catch (err) {
+      if (err.message === 'wrong_key') {
+        list.innerHTML = '<div class="orders-empty">المفتاح غلط 🔑 تأكد إن "مفتاح قراءة الأوردرات" مطابق لـ ACCESS_KEY في كود الشيت</div>';
+      } else {
+        list.innerHTML = '<div class="orders-empty">متعرفناش نقرا الشيت ⚠️<br>تأكد إنك عملت خطوة <b>"تحديث الإصدار (v2)"</b> في كود الشيت — التعليمات في <b>google-sheets-apps-script.txt</b></div>';
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('ordersRefreshBtn').addEventListener('click', loadOrders);
+
   // ---------- تعبئة الحقول الحالية ----------
   function fillSettings() {
     if (store.whatsapp) document.getElementById('sWhatsapp').value = store.whatsapp;
@@ -490,6 +551,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('sDelivery').value = store.deliveryFee || 25;
     if (store.video) document.getElementById('sVideo').value = store.video;
     if (store.sheetUrl) document.getElementById('sSheet').value = store.sheetUrl;
+    document.getElementById('sOrderKey').value = store.orderKey || DEFAULT_ORDER_KEY;
+    if (store.hours) document.getElementById('sHours').value = store.hours;
     if (store.telegramToken) document.getElementById('sTgToken').value = store.telegramToken;
     if (store.telegramChatId) document.getElementById('sTgChatId').value = store.telegramChatId;
   }

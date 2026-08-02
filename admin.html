@@ -197,6 +197,16 @@
               <button type="button" class="btn btn-ghost btn-sm" id="sheetTestBtn" style="width:auto"><i class="fa-solid fa-table"></i> تجربة الشيت</button>
             </div>
           </div>
+          <div class="form-group">
+            <label>مفتاح قراءة الأوردرات</label>
+            <input type="text" id="sOrderKey" placeholder="minyawi-orders" dir="ltr" />
+            <small class="field-hint">لازم يطابق <b>ACCESS_KEY</b> في كود الشيت (شوف الملف النصي) — لو غيّرته في الشيت غيّره هنا كمان</small>
+          </div>
+          <div class="form-group">
+            <label>ساعات العمل (النص اللي فوق في الموقع)</label>
+            <input type="text" id="sHours" placeholder="مفتوح يوميًا من 9 صباحًا حتى 11 مساءً" />
+            <small class="field-hint">النص ده اللي بيظهر في الشريط الأخضر العلوي — غيرّه متى شئت</small>
+          </div>
         </div>
         <div class="form-actions">
           <button class="btn btn-primary" id="saveSettingsBtn"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>
@@ -223,6 +233,16 @@
           <button class="btn btn-primary" id="tgTestBtn"><i class="fa-solid fa-paper-plane"></i> إرسال رسالة تجربة</button>
           <button class="btn btn-primary" id="saveSettingsBtn2"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
         </div>
+      </div>
+
+      <!-- ===== الأوردرات الأخيرة ===== -->
+      <div class="admin-card settings-card">
+        <h2><i class="fa-solid fa-receipt"></i> الأوردرات الأخيرة</h2>
+        <p class="admin-sub">آخر 50 طلب مسجلين في الشيت — الأحدث الأول</p>
+        <div class="form-actions" style="margin-bottom:12px">
+          <button class="btn btn-primary" id="ordersRefreshBtn"><i class="fa-solid fa-rotate"></i> تحديث الأوردرات</button>
+        </div>
+        <div class="orders-list" id="ordersList"><div class="orders-empty">دوس "تحديث الأوردرات" عشان تشوف آخر الطلبات</div></div>
       </div>
 
     </div>

@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof cloud.phone === 'string') adminStore.phone = cloud.phone;
     if (typeof cloud.deliveryFee === 'number') adminStore.deliveryFee = cloud.deliveryFee;
     if (typeof cloud.video === 'string') adminStore.video = cloud.video;
+    if (typeof cloud.hours === 'string' && cloud.hours) adminStore.hours = cloud.hours;
     if (typeof cloud.sheetUrl === 'string' && cloud.sheetUrl) adminStore.sheetUrl = cloud.sheetUrl;
     if (typeof cloud.telegramToken === 'string') adminStore.telegramToken = cloud.telegramToken;
     if (typeof cloud.telegramChatId === 'string') adminStore.telegramChatId = cloud.telegramChatId;
@@ -58,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCartUI();
     applyPhone();
     setupVideo();
+    applyHours();
   })();
 
   // ---------- عناصر عامة ----------
@@ -711,6 +713,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('a[href^="https://wa.me/"]').forEach(a => { a.href = `https://wa.me/${WHATSAPP_NUMBER}`; });
   }
   applyPhone();
+
+  // ---------- ساعات العمل في الشريط العلوي ----------
+  function applyHours() {
+    const el = document.getElementById('topHours');
+    if (el && adminStore.hours) el.textContent = adminStore.hours;
+  }
+  applyHours();
 
   // ---------- تشغيل ----------
   renderProducts();

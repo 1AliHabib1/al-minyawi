@@ -13,6 +13,10 @@
    - امسح اللي جوه والصق الكود ده:
 
 ------------------------------------------------------------
+// مفتاح قراءة الأوردرات — غيّره لأي كلمة تحبها، واكتب نفس القيمة
+// في اللوحة: إعدادات المتجر ← "مفتاح قراءة الأوردرات"
+const ACCESS_KEY = 'minyawi-orders';
+
 function doPost(e) {
   var p = e.parameter;
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
@@ -28,6 +32,40 @@ function doPost(e) {
     p.lines || ''
   ]);
   return ContentService.createTextOutput('OK');
+}
+
+function doGet(e) {
+  var key = (e.parameter && e.parameter.k) || '';
+  if (key !== ACCESS_KEY) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: 'wrong_key' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    var values = sheet.getDataRange().getValues();
+    var orders = [];
+    for (var i = 1; i < values.length; i++) {
+      var r = values[i];
+      orders.push({
+        date: r[0] instanceof Date ? r[0].toISOString() : String(r[0] || ''),
+        ref: String(r[1] || ''),
+        name: String(r[2] || ''),
+        phone: String(r[3] || ''),
+        address: String(r[4] || ''),
+        notes: String(r[5] || ''),
+        delivery: String(r[6] || ''),
+        total: String(r[7] || ''),
+        lines: String(r[8] || '')
+      });
+    }
+    orders.reverse();
+    if (orders.length > 50) orders = orders.slice(0, 50);
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, orders: orders }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: 'read_failed' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 ------------------------------------------------------------
 
@@ -46,6 +84,13 @@ function doPost(e) {
    - الصق الرابط ← حفظ الإعدادات
    - دوس "تجربة الشيت" — لو ظهر "وصلت الشيت ✅" افتح الشيت وشوف آخر صف
 
+الخطوة 5 (مهمة): فعّل قراءة الأوردرات من اللوحة
+   - الكود الجديد فيه doGet (قراءة الأوردرات) + doPost (تسجيل الأوردرات)
+   - بعد ما لصقت الكود الجديد، لازم تحدّث النشر: Deploy ← Manage deployments
+     ← دوس علامة التعديل (القلم) ← Version: New version ← Deploy
+   - الرابط هيبقى نفس الرابط — ما يتغيرش
+   - لو الرابط اتغير (لو عملت New deployment جديد) حط الرابط الجديد في اللوحة
+
 ============================================================
 ملحوظات
 ============================================================
@@ -55,3 +100,5 @@ function doPost(e) {
 - لو الرابط اتحط غلط أو جوجل واقف: مفيش مشكلة — التيليجرام لسه شغال
 - حد بيبعت طلبات وهمية؟ دور الرابط في جوجل شيت: إعدادات الشيت نفسها
   (ممكن تسيبها زي ما هي — الكود بيقبل أي حاجة)
+- قسم "الأوردرات الأخيرة" في اللوحة بيقرا آخر 50 طلب من الشيت
+  (الأحدث الأول) — لازم الخطوة 5 تتعمل الأول
