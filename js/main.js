@@ -496,6 +496,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const address = document.getElementById('cAddress').value.trim();
       const notes = document.getElementById('cNotes').value.trim();
 
+      const honey = (document.getElementById('cHoney') || {}).value || '';
+      if (honey) { closeCheckoutModal(); showToast('تم استلام طلبك ✅'); return; }
+
+      const phoneDigits = phone.replace(/[\s\-()]/g, '');
+      if (!/^\+?\d{8,15}$/.test(phoneDigits)) { showToast('اكتب رقم تليفون صحيح — مثال: 01000000000', false); return; }
+
+      const lastOrderAt = parseInt(localStorage.getItem('minyawi_last_order') || '0', 10);
+      if (Date.now() - lastOrderAt < 45000) { showToast('استنى دقيقة بين كل طلب 😉', false); return; }
+      localStorage.setItem('minyawi_last_order', String(Date.now()));
+
       const lines = buildCartLines();
       const total = cartSum() + DELIVERY_FEE;
       const orderNo = (parseInt(localStorage.getItem('minyawi_order_count') || '0', 10) || 0) + 1;

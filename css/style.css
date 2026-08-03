@@ -970,3 +970,7 @@ html[dir="rtl"] .cart-drawer { transform: translateX(-100%); }
   .card-actions { flex-wrap: wrap; }
   .product-qty { flex: 1 1 100%; justify-content: space-between; }
 }
+
+/* ===== حماية من البوتات (حقل وهمي مخفي) ===== */
+.honeypot { position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.honeypot input { width: 1px; height: 1px; border: 0; padding: 0; }

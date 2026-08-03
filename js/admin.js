@@ -111,14 +111,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    let fails = parseInt(localStorage.getItem('minyawi_login_fails') || '0', 10);
+    const lockUntil = parseInt(localStorage.getItem('minyawi_login_lock') || '0', 10);
+    if (Date.now() < lockUntil) {
+      loginError.hidden = false;
+      loginError.textContent = 'محاولات كتير فاشلة — استنى دقيقتين وجرب تاني';
+      return;
+    }
     const expected = store.passHash || await sha256Hex(DEFAULT_PASSWORD);
     const hash = await sha256Hex(loginPass.value);
     if (hash === expected) {
+      localStorage.removeItem('minyawi_login_fails');
+      localStorage.removeItem('minyawi_login_lock');
       sessionStorage.setItem('minyawi_admin_auth', '1');
       loginError.hidden = true;
       loginPass.value = '';
       openPanel();
     } else {
+      fails++;
+      if (fails >= 5) {
+        localStorage.setItem('minyawi_login_lock', String(Date.now() + 120000));
+        localStorage.setItem('minyawi_login_fails', '0');
+        loginError.textContent = 'محاولات كتير فاشلة — استنى دقيقتين وجرب تاني';
+      } else {
+        localStorage.setItem('minyawi_login_fails', String(fails));
+        loginError.textContent = `كلمة المرور غلط! (بقي فاضل ${5 - fails} محاولات)`;
+      }
       loginError.hidden = false;
       loginPass.value = '';
     }
