@@ -109,8 +109,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- الدخول ----------
   if (!store.passHash) loginHint.hidden = false;
 
+  const cloudInit = (async () => {
+    try {
+      const cloud = await cloudLoad();
+      if (cloud && typeof cloud.passHash === 'string' && cloud.passHash && cloud.passHash !== store.passHash) {
+        store.passHash = cloud.passHash;
+        saveAdminStore(store);
+        loginHint.hidden = true;
+      }
+    } catch { }
+  })();
+
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    await cloudInit;
     let fails = parseInt(localStorage.getItem('minyawi_login_fails') || '0', 10);
     const lockUntil = parseInt(localStorage.getItem('minyawi_login_lock') || '0', 10);
     if (Date.now() < lockUntil) {
@@ -162,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof cloud.hours === 'string' && cloud.hours) store.hours = cloud.hours;
       if (typeof cloud.telegramToken === 'string') store.telegramToken = cloud.telegramToken;
       if (typeof cloud.telegramChatId === 'string') store.telegramChatId = cloud.telegramChatId;
+      if (typeof cloud.passHash === 'string' && cloud.passHash) store.passHash = cloud.passHash;
       saveAdminStore(store);
       fillSettings();
       renderAdminList();

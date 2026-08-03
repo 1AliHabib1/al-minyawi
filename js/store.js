@@ -144,7 +144,6 @@ async function cloudSave(store) {
   if (!DEFAULT_FIREBASE_PROJECT) return false;
   try {
     const clean = JSON.parse(JSON.stringify(store));
-    delete clean.passHash;
     const del = new Set(clean.deleted || []);
     const imgs = {};
     (clean.products || []).forEach(p => { if (!del.has(p.id) && p.img) { imgs[p.id] = p.img; delete p.img; } });
