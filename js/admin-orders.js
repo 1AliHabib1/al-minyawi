@@ -33,8 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let glowT;
 
   const orderStatus = (ref) => doneOrders.includes(ref) ? 'done' : preparingOrders.includes(ref) ? 'preparing' : 'new';
+  const fixPhone = (p) => /^1\d{9}$/.test(String(p).replace(/[^0-9]/g, '')) ? '0' + p : p;
   const waNum = (p) => {
-    const d = String(p || '').replace(/[^0-9]/g, '');
+    const d = String(fixPhone(p)).replace(/[^0-9]/g, '');
     if (!d) return '';
     if (d.startsWith('0')) return '20' + d.slice(1);
     return d.startsWith('2') ? d : '2' + d;
@@ -148,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <b>${escHtml(o.ref || '—')} ${stChip}<span class="expand-arrow"><i class="fa-solid fa-chevron-down"></i></span></b>
           <span>${fmtDate(o.date)}</span>
         </div>
-        <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
+        <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(fixPhone(o.phone)) + '</span>' : ''}</div>
         <div class="order-details"${open ? '' : ' hidden'}>
           ${o.lines ? `<div class="order-item-lines">${escHtml(o.lines).split('\n').map(l => `<div>${l}</div>`).join('')}</div>` : ''}
           ${o.address ? `<div class="order-item-line"><i class="fa-solid fa-location-dot"></i> ${escHtml(o.address)}</div>` : ''}

@@ -31,6 +31,11 @@ function doPost(e) {
     p.total || '',
     p.lines || ''
   ]);
+  // مهم جدًا: عمود التليفون لازم يفضل نص (Text) — لو اتخزن كرقم
+  // جوجل شيت بيحذف الـ 0 الأولانية (01012345678 → 1012345678)
+  var lastRow = sheet.getLastRow();
+  sheet.getRange(2, 4, Math.max(lastRow - 1, 1), 1).setNumberFormat('@');
+  sheet.getRange(lastRow, 4).setValue(p.phone || '');
   // مسح الكاش عشان الطلب الجديد يظهر فورًا في اللوحة
   var cache = CacheService.getScriptCache();
   cache.remove('orders:' + (p.k || ACCESS_KEY));
@@ -56,11 +61,15 @@ function doGet(e) {
     var orders = [];
     for (var i = 1; i < values.length; i++) {
       var r = values[i];
+      // استرجاع الـ 0 المحذوفة من الأرقام القديمة المخزنة كأرقام
+      // (الموبايل المصري دايمًا 11 رقم: 01x xxxxxxx)
+      var ph = String(r[3] || '');
+      if (/^1\d{9}$/.test(ph)) ph = '0' + ph;
       orders.push({
         date: r[0] instanceof Date ? r[0].toISOString() : String(r[0] || ''),
         ref: String(r[1] || ''),
         name: String(r[2] || ''),
-        phone: String(r[3] || ''),
+        phone: ph,
         address: String(r[4] || ''),
         notes: String(r[5] || ''),
         delivery: String(r[6] || ''),
@@ -107,6 +116,14 @@ function doGet(e) {
    - النسخة الحالية فيها كاش (CacheService) عشان قراءة الأوردرات متبقاش بطيئة
    - لو نسخت الكود قبل كده: اعمل copy للكود الجديد ده كله (مع خطوة 5 تحديث الإصدار)
    - أول تحديث بعد خمول هيلاقي تأخير صغير (كولد ستارت من جوجل) — اللي بعده بيبقى فوري
+
+الخطوة 7 (إصلاح رقم العميل الناقص): شغّل نسخة الكود دي
+   - المشكلة: جوجل شيت كان بيخزن رقم التليفون كرقم فيحذف الـ 0 الأولانية (010 → 10)
+   - الكود الجديد بيخزن التليفون كنص دايما + بيرجع الـ 0 المحذوفة من الطلبات القديمة
+   - بعد ما تلصق الكود الجديد: Deploy ← Manage deployments ← القلم
+     ← Version: New version ← Deploy (نفس الخطوة 5)
+   - افتح شيتك: لو فيه أرقام 10 خانات، حددهم ← Format ← Number ← Plain text
+     ← اكتب 0 قدامهم باليد (اللي بعد كده هيتصلح لوحده)
 
 ============================================================
 ملحوظات

@@ -59,6 +59,47 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pImg) pImgPreviewImg.src = pImg;
   }
 
+  // إزالة الخلفية البيضاء تلقائيًا (خوارزمية Flood Fill من الحواف)
+  function removeWhiteBg(c) {
+    const ctx = c.getContext('2d');
+    const w = c.width, h = c.height;
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+    const HARD = 238, SOFT = 200;
+    const isBg = (i) => d[i] >= HARD && d[i + 1] >= HARD && d[i + 2] >= HARD;
+    const total = w * h;
+    const marked = new Uint8Array(total);
+    const stack = [];
+    const push = (x, y) => {
+      if (x < 0 || y < 0 || x >= w || y >= h) return;
+      const idx = y * w + x;
+      if (!marked[idx] && isBg(idx * 4)) { marked[idx] = 1; stack.push(idx); }
+    };
+    for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+    for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+    while (stack.length) {
+      const idx = stack.pop();
+      const x = idx % w, y = (idx / w) | 0;
+      push(x - 1, y); push(x + 1, y); push(x, y - 1); push(x, y + 1);
+    }
+    let removed = 0;
+    for (let i = 0; i < total; i++) if (marked[i]) { d[i * 4 + 3] = 0; removed++; }
+    if (removed < total * 0.12) return false; // مفيش خلفية بيضا واضحة
+    for (let i = 0; i < total; i++) {
+      if (marked[i] || d[i * 4 + 3] === 0) continue;
+      const m = Math.min(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]);
+      if (m >= HARD) continue;
+      const x = i % w, y = (i / w) | 0;
+      const near = (marked[y * w + x - 1] && x > 0) || (marked[y * w + x + 1] && x < w - 1) ||
+                   (marked[(y - 1) * w + x] && y > 0) || (marked[(y + 1) * w + x] && y < h - 1);
+      if (near && m >= SOFT) {
+        d[i * 4 + 3] = Math.round(255 * (m - SOFT) / (HARD - SOFT));
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return true;
+  }
+
   pImgFile.addEventListener('change', () => {
     const file = pImgFile.files[0];
     if (!file) return;
@@ -76,10 +117,17 @@ document.addEventListener('DOMContentLoaded', () => {
           c.height = Math.max(1, Math.round(img.height * scale));
           const ctx = c.getContext('2d');
           ctx.drawImage(img, 0, 0, c.width, c.height);
-          let url = c.toDataURL('image/webp', 0.8);
-          if (!url.startsWith('data:image/webp')) url = c.toDataURL('image/jpeg', 0.85);
+          const bgRemoved = document.getElementById('pBgRemove').checked && removeWhiteBg(c);
+          let url;
+          if (bgRemoved) {
+            url = c.toDataURL('image/webp', 0.85);
+            if (!url.startsWith('data:image/webp')) url = c.toDataURL('image/png');
+          } else {
+            url = c.toDataURL('image/webp', 0.8);
+            if (!url.startsWith('data:image/webp')) url = c.toDataURL('image/jpeg', 0.85);
+          }
           setPImg(url);
-          showToast('اتضافت الصورة ✅ هتظهر في المتجر بعد الحفظ');
+          showToast(bgRemoved ? 'اتضافت الصورة ✅ اتمسحت الخلفية البيضاء تلقائيًا' : 'اتضافت الصورة ✅ هتظهر في المتجر بعد الحفظ');
         } catch {
           showToast('متعرفناش نعالج الصورة دي — جرب صورة تانية', false);
         }
@@ -516,13 +564,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     el.innerHTML = recent.map(o => {
       const done = orderDone(o.ref);
+      const ph = o.phone && /^1\d{9}$/.test(String(o.phone).replace(/[^0-9]/g, '')) ? '0' + o.phone : o.phone;
       return `
         <div class="order-item${done ? ' done' : ''}">
           <div class="order-item-top">
             <b>${escHtml(o.ref || '—')} ${done ? '<span class="chip chip-done">تم التسليم</span>' : '<span class="chip chip-new">جديد</span>'}</b>
             <span>${fmtDate(o.date)}</span>
           </div>
-          <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
+          <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${ph ? ' • <span dir="ltr">' + escHtml(ph) + '</span>' : ''}</div>
           <div class="order-item-bottom">
             <span>${o.lines ? escHtml(o.lines).split('\n').slice(0, 2).join(' • ') : ''}</span>
             <b>${escHtml(o.total || '0')} ج.م</b>
