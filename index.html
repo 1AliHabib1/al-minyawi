@@ -66,13 +66,27 @@
       </a>
 
       <nav class="nav" id="nav">
-        <a href="#home" class="nav-link active">الرئيسية</a>
-        <a href="#products" class="nav-link">المنتجات</a>
-        <a href="#offers" class="nav-link">العروض</a>
-        <a href="#features" class="nav-link">لماذا نحن؟</a>
-        <a href="#contact" class="nav-link">تواصل معنا</a>
-        <button class="nav-close" id="navClose" aria-label="إغلاق القائمة"><i class="fa-solid fa-xmark"></i></button>
+        <div class="nav-head">
+          <a href="#home" class="logo nav-logo">
+            <span class="logo-icon logo-img"><img src="assets/logo.png" alt="شعار المنياوي" /></span>
+            <span class="logo-text">المنياوي<small>خضار وفاكهة طازة</small></span>
+          </a>
+          <button class="nav-close" id="navClose" aria-label="إغلاق القائمة"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="nav-links">
+          <a href="#home" class="nav-link active"><i class="fa-solid fa-house"></i> الرئيسية</a>
+          <a href="#products" class="nav-link"><i class="fa-solid fa-carrot"></i> المنتجات</a>
+          <a href="#offers" class="nav-link"><i class="fa-solid fa-fire"></i> العروض</a>
+          <a href="#features" class="nav-link"><i class="fa-solid fa-circle-check"></i> لماذا نحن؟</a>
+          <a href="#contact" class="nav-link"><i class="fa-solid fa-envelope"></i> تواصل معنا</a>
+        </div>
+        <div class="nav-foot">
+          <p><i class="fa-solid fa-phone"></i> <span class="site-phone">01030809915</span></p>
+          <p><i class="fa-solid fa-clock"></i> <span id="navHours">مفتوح يوميًا من 9 صباحًا حتى 11 مساءً</span></p>
+          <a href="#products" class="btn btn-primary"><i class="fa-solid fa-basket-shopping"></i> اطلب دلوقتي</a>
+        </div>
       </nav>
+      <div class="nav-overlay" id="navOverlay"></div>
 
       <div class="header-actions">
         <button class="cart-btn" id="cartBtn" aria-label="عربة التسوق">

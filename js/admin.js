@@ -542,6 +542,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function orderDone(ref) { return doneOrders.includes(ref); }
 
+  function fillDashStats() {
+    const d = new Date();
+    document.getElementById('dashDate').textContent = d.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
   function renderOrders(orders) {
     const list = document.getElementById('ordersList');
     const summary = document.getElementById('ordersSummary');
@@ -551,6 +556,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('osCount').textContent = today.length;
     document.getElementById('osTotal').textContent = `${todayTotal} ج.م`;
     document.getElementById('osPending').textContent = pending;
+    const dt = document.getElementById('dashToday'); if (dt) dt.textContent = today.length;
+    const dTot = document.getElementById('dashTotal'); if (dTot) dTot.textContent = `${todayTotal} ج.م`;
+    const dPen = document.getElementById('dashPending'); if (dPen) dPen.textContent = pending;
     summary.hidden = false;
     const sorted = [...orders].sort((a, b) => {
       if (orderDone(a.ref) !== orderDone(b.ref)) return orderDone(a.ref) ? 1 : -1;
@@ -636,6 +644,8 @@ document.addEventListener('DOMContentLoaded', () => {
     list.innerHTML = '<div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الرسايل...</div>';
     const msgs = await listMessages();
     if (btn) btn.disabled = false;
+    const dashM = document.getElementById('dashMsgs');
+    if (dashM) dashM.textContent = msgs.length;
     if (!msgs.length) {
       list.innerHTML = '<div class="orders-empty">مفيش رسايل لسه 📭 أول ما عميل يبعت من الموقع هتظهر هنا</div>';
       return;
@@ -662,6 +672,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('msgsRefreshBtn').addEventListener('click', loadMessages);
+
+  // ---------- الداشبورد: تمرير سلس للأقسام ----------
+  fillDashStats();
+  document.querySelectorAll('.dash-link, #dashOrdersBtn').forEach(el => {
+    el.addEventListener('click', (e) => {
+      const target = document.querySelector(el.dataset.target || el.getAttribute('href'));
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 
   // ---------- تعبئة الحقول الحالية ----------
   function fillSettings() {

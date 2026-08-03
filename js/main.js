@@ -662,9 +662,20 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ---------- الهيدر والتنقل ----------
-  document.getElementById('menuBtn').addEventListener('click', () => nav.classList.add('open'));
-  document.getElementById('navClose').addEventListener('click', () => nav.classList.remove('open'));
-  nav.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => nav.classList.remove('open')));
+  function closeNav() {
+    nav.classList.remove('open');
+    document.getElementById('navOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('menuBtn').addEventListener('click', () => {
+    nav.classList.add('open');
+    document.getElementById('navOverlay').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  });
+  document.getElementById('navClose').addEventListener('click', closeNav);
+  document.getElementById('navOverlay').addEventListener('click', closeNav);
+  nav.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', closeNav));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNav(); });
 
   window.addEventListener('scroll', () => {
     header.classList.toggle('scrolled', window.scrollY > 40);
@@ -733,6 +744,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function applyHours() {
     const el = document.getElementById('topHours');
     if (el && adminStore.hours) el.textContent = adminStore.hours;
+    const navEl = document.getElementById('navHours');
+    if (navEl && adminStore.hours) navEl.textContent = adminStore.hours;
   }
   applyHours();
 

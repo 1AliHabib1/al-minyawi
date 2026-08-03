@@ -97,17 +97,23 @@ input, textarea { font-family: inherit; }
 .logo-text small { font-size: 0.68rem; font-weight: 600; color: var(--orange-500); letter-spacing: 0.5px; }
 
 .nav { display: flex; align-items: center; gap: 6px; }
+.nav-head, .nav-foot { display: none; }
+.nav-links { display: flex; align-items: center; gap: 6px; }
 .nav-link {
   padding: 8px 16px;
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--text);
   border-radius: 50px;
+  display: flex; align-items: center; gap: 8px;
   transition: 0.25s;
 }
+.nav-link i { color: var(--green-600); font-size: 0.9em; transition: 0.25s; }
 .nav-link:hover { color: var(--green-600); background: var(--green-50); }
 .nav-link.active { color: #fff; background: var(--grad); box-shadow: 0 6px 14px rgba(22, 163, 74, 0.3); }
+.nav-link.active i { color: #fff; }
 .nav-close { display: none; }
+.nav-overlay { display: none; }
 
 .header-actions { display: flex; align-items: center; gap: 10px; }
 
@@ -939,25 +945,79 @@ html[dir="rtl"] .cart-drawer { transform: translateX(-100%); }
 @media (max-width: 768px) {
   .top-bar-hidden { display: none; }
   .menu-btn { display: grid; place-items: center; }
+  .nav-overlay {
+    display: block;
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    z-index: 1140;
+  }
+  .nav-overlay.show { opacity: 1; pointer-events: auto; }
   .nav {
     position: fixed;
     top: 0; inset-inline-end: 0;
-    height: 100vh;
-    width: min(300px, 82vw);
+    height: 100dvh;
+    width: min(320px, 86vw);
     background: #fff;
     flex-direction: column;
-    justify-content: center;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 0;
     transform: translateX(100%);
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.12);
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -24px 0 60px rgba(0, 0, 0, 0.18);
     z-index: 1150;
+    border-start-start-radius: 24px;
+    border-end-start-radius: 24px;
+    overflow-y: auto;
   }
   html[dir="rtl"] .nav { transform: translateX(-100%); }
   .nav.open { transform: translateX(0); }
   html[dir="rtl"] .nav.open { transform: translateX(0); }
-  .nav-link { font-size: 1.05rem; padding: 12px 24px; }
-  .nav-close { display: grid; place-items: center; position: absolute; top: 18px; inset-inline-start: 18px; width: 38px; height: 38px; border-radius: 11px; background: #f1f5f9; color: var(--dark); }
+  .nav-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 14px 12px 14px 18px;
+    background: var(--grad);
+    border-start-start-radius: 24px;
+    position: sticky; top: 0; z-index: 2;
+  }
+  .nav-head .logo-text { color: #fff; }
+  .nav-head .logo-text small { color: rgba(255, 255, 255, 0.85); }
+  .nav-head .logo-img { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35); }
+  .nav-close {
+    display: grid; place-items: center;
+    position: static;
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 1.05rem;
+    transition: 0.2s;
+  }
+  .nav-close:hover { background: rgba(255, 255, 255, 0.3); }
+  .nav-links { flex-direction: column; align-items: stretch; gap: 6px; padding: 14px 14px 6px; }
+  .nav-link {
+    font-size: 1.02rem;
+    padding: 13px 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    gap: 12px;
+  }
+  .nav-link i { width: 22px; text-align: center; font-size: 1.05rem; }
+  .nav-link:hover { background: var(--green-50); }
+  .nav-foot {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-top: auto;
+    padding: 14px;
+    border-top: 1px solid #eef2f7;
+    position: sticky; bottom: 0; background: #fff;
+  }
+  .nav-foot p { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--muted); margin: 0; }
+  .nav-foot p i { color: var(--green-600); width: 18px; text-align: center; }
+  .nav-foot .btn { width: 100%; }
   .section { padding: 60px 0; }
   .hero { padding: 50px 0 110px; }
   .footer-inner { grid-template-columns: 1fr; gap: 28px; }
