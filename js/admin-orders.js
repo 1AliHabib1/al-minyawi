@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const key = (store.orderKey || '').trim() || DEFAULT_ORDER_KEY;
     const list = document.getElementById('ordersList');
     const btn = document.getElementById('ordersRefreshBtn');
-    if (!url) { showToast('حط رابط الشيت الأول في "إعدادات الطلبات"', false); return; }
+    if (!url) { if (!silent) showToast('حط رابط الشيت الأول في "إعدادات الطلبات"', false); return; }
 
     // 1) عرض آخر نسخة محفوظة فورًا
     const cache = getOrdersCache();
@@ -176,11 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const start = Date.now();
     const tick = setInterval(() => {
       const el = Date.now() - start;
-      renderStatus(`بأحدث البيانات من الشيت... ${Math.floor(el / 1000)} ث`);
-      if (el > 10000 && !slowHinted) {
-        slowHinted = true;
-        renderStatus('الشيت بياخد وقت في أول تحميل (كولد ستارت) — الصفحة شغالة والبيانات هتيجي لحد ما تظهر', true);
-      }
+      if (el > 10000 && !slowHinted) slowHinted = true;
+      renderStatus(slowHinted
+        ? `بأحدث البيانات من الشيت... ${Math.floor(el / 1000)} ث (كولد ستارت)`
+        : `بأحدث البيانات من الشيت... ${Math.floor(el / 1000)} ث`, slowHinted);
     }, 1000);
     try {
       const [orders, doneRes] = await Promise.all([
@@ -284,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   fillOrderSettings();
-  loadOrders(false);
+  if (!panel.hidden) loadOrders(false);
 
   const filterBar = document.getElementById('ordersFilterBar');
   if (filterBar) {

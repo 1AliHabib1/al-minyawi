@@ -321,6 +321,7 @@ body { background: #eef4ee; }
 /* ===== شرائح الحالة + الفلترة + البحث ===== */
 .orders-status { font-size: 0.8rem; color: #64748b; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
 .orders-status::before { content: '\f017'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
+.orders-summary[hidden], .orders-status[hidden], .order-details[hidden] { display: none; }
 .chip { display: inline-block; font-size: 0.7rem; font-weight: 700; border-radius: 20px; padding: 2px 10px; margin-inline-start: 8px; vertical-align: middle; }
 .chip-new { background: #dbeafe; color: #1d4ed8; }
 .chip-done { background: #dcfce7; color: #15803d; }
