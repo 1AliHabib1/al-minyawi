@@ -180,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAdminList();
       showToast('اتحملت البيانات من السحابة ✅');
     }
+    loadOrders();
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -531,6 +532,50 @@ document.addEventListener('DOMContentLoaded', () => {
     return dt.toLocaleString('ar-EG', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   }
 
+  const isToday = (d) => {
+    const dt = new Date(d);
+    return !isNaN(dt.getTime()) && dt.toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA');
+  };
+
+  let doneOrders = [];
+
+  function orderDone(ref) { return doneOrders.includes(ref); }
+
+  function renderOrders(orders) {
+    const list = document.getElementById('ordersList');
+    const summary = document.getElementById('ordersSummary');
+    const today = orders.filter(o => isToday(o.date));
+    const todayTotal = today.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+    const pending = orders.filter(o => !orderDone(o.ref)).length;
+    document.getElementById('osCount').textContent = today.length;
+    document.getElementById('osTotal').textContent = `${todayTotal} ج.م`;
+    document.getElementById('osPending').textContent = pending;
+    summary.hidden = false;
+    const sorted = [...orders].sort((a, b) => {
+      if (orderDone(a.ref) !== orderDone(b.ref)) return orderDone(a.ref) ? 1 : -1;
+      return 0;
+    });
+    list.innerHTML = sorted.map(o => {
+      const done = orderDone(o.ref);
+      return `
+        <div class="order-item${done ? ' done' : ''}">
+          <div class="order-item-top">
+            <b>${escHtml(o.ref || '—')}${done ? ' <span class="done-badge">تم التسليم ✓</span>' : ''}</b>
+            <span>${fmtDate(o.date)}</span>
+          </div>
+          <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
+          ${o.address ? `<div class="order-item-line"><i class="fa-solid fa-location-dot"></i> ${escHtml(o.address)}</div>` : ''}
+          ${o.notes ? `<div class="order-item-line"><i class="fa-solid fa-note-sticky"></i> ${escHtml(o.notes)}</div>` : ''}
+          ${o.lines ? `<div class="order-item-lines">${escHtml(o.lines).split('\n').map(l => `<div>${l}</div>`).join('')}</div>` : ''}
+          <div class="order-item-bottom">
+            <span>التوصيل ${escHtml(o.delivery || '0')} ج.م</span>
+            <b>الإجمالي ${escHtml(o.total || '0')} ج.م</b>
+          </div>
+          <button type="button" class="done-btn" data-ref="${escHtml(o.ref)}">${done ? 'إلغاء تم' : 'تم التسليم ✔'}</button>
+        </div>`;
+    }).join('');
+  }
+
   async function loadOrders() {
     const url = (store.sheetUrl || '').trim();
     const key = (store.orderKey || '').trim() || DEFAULT_ORDER_KEY;
@@ -540,29 +585,20 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.disabled = true;
     list.innerHTML = '<div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الأوردرات...</div>';
     try {
-      const res = await fetch(`${url}?k=${encodeURIComponent(key)}`, { cache: 'no-store' });
+      const [res, doneRes] = await Promise.all([
+        fetch(`${url}?k=${encodeURIComponent(key)}`, { cache: 'no-store' }),
+        loadDoneOrders(),
+      ]);
+      doneOrders = doneRes;
       if (!res.ok) throw new Error('http');
       const data = await res.json();
       if (!data || data.ok !== true) throw new Error(data && data.error === 'wrong_key' ? 'wrong_key' : 'bad');
       const orders = data.orders || [];
       if (!orders.length) {
+        document.getElementById('ordersSummary').hidden = true;
         list.innerHTML = '<div class="orders-empty">مفيش أوردرات لسه 🍃 أول ما يجي طلب هيظهر هنا</div>';
       } else {
-        list.innerHTML = orders.map(o => `
-          <div class="order-item">
-            <div class="order-item-top">
-              <b>${escHtml(o.ref || '—')}</b>
-              <span>${fmtDate(o.date)}</span>
-            </div>
-            <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
-            ${o.address ? `<div class="order-item-line"><i class="fa-solid fa-location-dot"></i> ${escHtml(o.address)}</div>` : ''}
-            ${o.notes ? `<div class="order-item-line"><i class="fa-solid fa-note-sticky"></i> ${escHtml(o.notes)}</div>` : ''}
-            ${o.lines ? `<div class="order-item-lines">${escHtml(o.lines).split('\n').map(l => `<div>${l}</div>`).join('')}</div>` : ''}
-            <div class="order-item-bottom">
-              <span>التوصيل ${escHtml(o.delivery || '0')} ج.م</span>
-              <b>الإجمالي ${escHtml(o.total || '0')} ج.م</b>
-            </div>
-          </div>`).join('');
+        renderOrders(orders);
       }
     } catch (err) {
       if (err.message === 'wrong_key') {
@@ -574,6 +610,20 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled = false;
     }
   }
+
+  document.getElementById('ordersList').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.done-btn');
+    if (!btn) return;
+    const ref = btn.dataset.ref;
+    if (doneOrders.includes(ref)) {
+      doneOrders = doneOrders.filter(r => r !== ref);
+    } else {
+      doneOrders.push(ref);
+    }
+    const ok = await saveDoneOrders(doneOrders);
+    showToast(ok ? (doneOrders.includes(ref) ? 'تمام — اتسجل أنه اتسلم ✅' : 'اتلغى تم') : 'التحديث اتسجل على الجهاز بس (السحابة مش راضية)', ok);
+    await loadOrders();
+  });
 
   document.getElementById('ordersRefreshBtn').addEventListener('click', loadOrders);
 

@@ -237,8 +237,13 @@
 
       <!-- ===== الأوردرات الأخيرة ===== -->
       <div class="admin-card settings-card">
-        <h2><i class="fa-solid fa-receipt"></i> الأوردرات الأخيرة</h2>
-        <p class="admin-sub">آخر 50 طلب مسجلين في الشيت — الأحدث الأول</p>
+        <h2><i class="fa-solid fa-receipt"></i> الأوردرات + تقرير النهارده</h2>
+        <p class="admin-sub">آخر 50 طلب في الشيت — غير المسلَّم أعلى الأول، وعليّم "تم التسليم" على اللي وصل</p>
+        <div class="orders-summary" id="ordersSummary" hidden>
+          <div class="os-item"><span>أوردرات النهارده</span><b id="osCount">0</b></div>
+          <div class="os-item"><span>إجمالي النهارده</span><b id="osTotal">0 ج.م</b></div>
+          <div class="os-item"><span>لسه مستنيين</span><b id="osPending">0</b></div>
+        </div>
         <div class="form-actions" style="margin-bottom:12px">
           <button class="btn btn-primary" id="ordersRefreshBtn"><i class="fa-solid fa-rotate"></i> تحديث الأوردرات</button>
         </div>

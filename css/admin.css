@@ -273,6 +273,17 @@ body { background: #eef4ee; }
 .order-item-bottom span { color: var(--muted); }
 .order-item-bottom b { color: var(--tomato); }
 
+/* ===== تقرير النهارده + تم التسليم ===== */
+.orders-summary { display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
+.os-item { flex: 1; min-width: 120px; background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #bbf7d0; border-radius: 14px; padding: 10px 14px; text-align: center; }
+.os-item span { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+.os-item b { font-size: 1.15rem; color: var(--green); }
+.done-btn { margin-top: 10px; width: 100%; padding: 7px 0; border-radius: 10px; border: 1px solid #bbf7d0; background: #fff; color: var(--green); font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all .15s; }
+.done-btn:hover { background: var(--green); color: #fff; }
+.order-item.done { background: #f0fdf4; border-color: #86efac; }
+.order-item.done .done-btn { background: var(--green); color: #fff; }
+.done-badge { display: inline-block; background: #22c55e; color: #fff; font-size: 0.72rem; border-radius: 20px; padding: 1px 8px; margin-inline-start: 6px; font-weight: 600; }
+
 /* ===== التجاوب ===== */
 @media (max-width: 992px) {
   .admin-grid { grid-template-columns: 1fr; }

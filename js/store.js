@@ -174,6 +174,29 @@ async function cloudSave(store) {
   } catch { return false; }
 }
 
+async function loadDoneOrders() {
+  if (!DEFAULT_FIREBASE_PROJECT) return [];
+  try {
+    const res = await fetch(`${fbBase()}/state/doneOrders`);
+    if (!res.ok) return [];
+    const doc = await res.json();
+    const arr = JSON.parse((doc.fields && doc.fields.data && doc.fields.data.stringValue) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+}
+
+async function saveDoneOrders(refs) {
+  if (!DEFAULT_FIREBASE_PROJECT) return false;
+  try {
+    const res = await fetch(`${fbBase()}/state/doneOrders?updateMask.fieldPaths=data`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { data: { stringValue: JSON.stringify(refs) } } }),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
 async function sha256Hex(text) {
   if (crypto && crypto.subtle) {
     try {
