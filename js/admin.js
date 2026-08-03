@@ -31,16 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let pImg = '';
   let listSearch = '';
 
-  // ---------- التوست ----------
-  let toastTimer;
-  function showToast(msg, ok = true) {
-    toastMsg.textContent = msg;
-    toast.querySelector('i').className = ok ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
-  }
-
   // ---------- منتقي الإيموجي ----------
   const picker = document.getElementById('emojiPicker');
   picker.innerHTML = EMOJIS.map(e => `<button type="button" data-emoji="${e}">${e}</button>`).join('');
@@ -537,62 +527,96 @@ document.addEventListener('DOMContentLoaded', () => {
     const dt = new Date(d);
     return !isNaN(dt.getTime()) && dt.toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA');
   };
+  const isYesterday = (d) => {
+    const dt = new Date(d);
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    return !isNaN(dt.getTime()) && dt.toLocaleDateString('en-CA') === y.toLocaleDateString('en-CA');
+  };
+  const dayKey = (d) => { const dt = new Date(d); return isNaN(dt.getTime()) ? '' : dt.toLocaleDateString('en-CA'); };
 
   let doneOrders = [];
 
   function orderDone(ref) { return doneOrders.includes(ref); }
+
+  function renderChart(orders) {
+    const wrap = document.getElementById('chartBars');
+    const days = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now); d.setDate(now.getDate() - i);
+      days.push({ key: d.toLocaleDateString('en-CA'), label: d.toLocaleDateString('ar-EG', { weekday: 'short' }) });
+    }
+    const perDay = days.map(day => {
+      const dayOrders = orders.filter(o => dayKey(o.date) === day.key);
+      return { ...day, count: dayOrders.length, total: dayOrders.reduce((s, o) => s + (parseFloat(o.total) || 0), 0) };
+    });
+    const max = Math.max(1, ...perDay.map(d => d.count));
+    wrap.innerHTML = perDay.map(d => `
+      <div class="chart-col" title="${d.label}: ${d.count} أوردرات — ${d.total} ج.م">
+        <div class="chart-bar-wrap">
+          <div class="chart-bar" style="height:${Math.max(4, Math.round((d.count / max) * 100))}%"></div>
+        </div>
+        <span class="chart-day">${d.label}</span>
+      </div>`).join('');
+  }
+
+  function renderRecent(orders) {
+    const el = document.getElementById('dashRecent');
+    const recent = orders.slice(0, 5);
+    if (!recent.length) {
+      el.innerHTML = '<div class="orders-empty">مفيش أوردرات لسه 🍃 أول ما يجي طلب هيظهر هنا</div>';
+      return;
+    }
+    el.innerHTML = recent.map(o => {
+      const done = orderDone(o.ref);
+      return `
+        <div class="order-item${done ? ' done' : ''}">
+          <div class="order-item-top">
+            <b>${escHtml(o.ref || '—')} ${done ? '<span class="chip chip-done">تم التسليم</span>' : '<span class="chip chip-new">جديد</span>'}</b>
+            <span>${fmtDate(o.date)}</span>
+          </div>
+          <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
+          <div class="order-item-bottom">
+            <span>${o.lines ? escHtml(o.lines).split('\n').slice(0, 2).join(' • ') : ''}</span>
+            <b>${escHtml(o.total || '0')} ج.م</b>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function setTrend(el, today, yesterday) {
+    if (!el) return;
+    if (!yesterday) { el.textContent = 'أول يوم ليك 👌'; el.className = 'stat-trend stat-new'; return; }
+    const diff = today - yesterday;
+    if (diff > 0) { el.textContent = `▲ ${diff} عن إمبارح`; el.className = 'stat-trend stat-up'; }
+    else if (diff < 0) { el.textContent = `▼ ${Math.abs(diff)} عن إمبارح`; el.className = 'stat-trend stat-down'; }
+    else { el.textContent = 'زي إمبارح'; el.className = 'stat-trend stat-flat'; }
+  }
 
   function fillDashStats() {
     const d = new Date();
     document.getElementById('dashDate').textContent = d.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   }
 
-  function renderOrders(orders) {
-    const list = document.getElementById('ordersList');
-    const summary = document.getElementById('ordersSummary');
+  function renderDash(orders) {
     const today = orders.filter(o => isToday(o.date));
+    const yesterday = orders.filter(o => isYesterday(o.date));
     const todayTotal = today.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+    const yesterdayTotal = yesterday.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
     const pending = orders.filter(o => !orderDone(o.ref)).length;
-    document.getElementById('osCount').textContent = today.length;
-    document.getElementById('osTotal').textContent = `${todayTotal} ج.م`;
-    document.getElementById('osPending').textContent = pending;
     const dt = document.getElementById('dashToday'); if (dt) dt.textContent = today.length;
     const dTot = document.getElementById('dashTotal'); if (dTot) dTot.textContent = `${todayTotal} ج.م`;
     const dPen = document.getElementById('dashPending'); if (dPen) dPen.textContent = pending;
-    summary.hidden = false;
-    const sorted = [...orders].sort((a, b) => {
-      if (orderDone(a.ref) !== orderDone(b.ref)) return orderDone(a.ref) ? 1 : -1;
-      return 0;
-    });
-    list.innerHTML = sorted.map(o => {
-      const done = orderDone(o.ref);
-      return `
-        <div class="order-item${done ? ' done' : ''}">
-          <div class="order-item-top">
-            <b>${escHtml(o.ref || '—')}${done ? ' <span class="done-badge">تم التسليم ✓</span>' : ''}</b>
-            <span>${fmtDate(o.date)}</span>
-          </div>
-          <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
-          ${o.address ? `<div class="order-item-line"><i class="fa-solid fa-location-dot"></i> ${escHtml(o.address)}</div>` : ''}
-          ${o.notes ? `<div class="order-item-line"><i class="fa-solid fa-note-sticky"></i> ${escHtml(o.notes)}</div>` : ''}
-          ${o.lines ? `<div class="order-item-lines">${escHtml(o.lines).split('\n').map(l => `<div>${l}</div>`).join('')}</div>` : ''}
-          <div class="order-item-bottom">
-            <span>التوصيل ${escHtml(o.delivery || '0')} ج.م</span>
-            <b>الإجمالي ${escHtml(o.total || '0')} ج.م</b>
-          </div>
-          <button type="button" class="done-btn" data-ref="${escHtml(o.ref)}">${done ? 'إلغاء تم' : 'تم التسليم ✔'}</button>
-        </div>`;
-    }).join('');
+    setTrend(document.getElementById('dashTodayT'), today.length, yesterday.length);
+    setTrend(document.getElementById('dashTotalT'), todayTotal, yesterdayTotal);
+    renderChart(orders);
+    renderRecent(orders);
   }
 
   async function loadOrders() {
     const url = (store.sheetUrl || '').trim();
     const key = (store.orderKey || '').trim() || DEFAULT_ORDER_KEY;
-    const list = document.getElementById('ordersList');
-    const btn = document.getElementById('ordersRefreshBtn');
-    if (!url) { showToast('حط رابط الشيت الأول', false); return; }
-    btn.disabled = true;
-    list.innerHTML = '<div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الأوردرات...</div>';
+    if (!url) { showToast('حط رابط الشيت الأول في الإعدادات', false); return; }
     try {
       const [res, doneRes] = await Promise.all([
         fetch(`${url}?k=${encodeURIComponent(key)}`, { cache: 'no-store' }),
@@ -602,39 +626,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error('http');
       const data = await res.json();
       if (!data || data.ok !== true) throw new Error(data && data.error === 'wrong_key' ? 'wrong_key' : 'bad');
-      const orders = data.orders || [];
-      if (!orders.length) {
-        document.getElementById('ordersSummary').hidden = true;
-        list.innerHTML = '<div class="orders-empty">مفيش أوردرات لسه 🍃 أول ما يجي طلب هيظهر هنا</div>';
-      } else {
-        renderOrders(orders);
-      }
+      renderDash(data.orders || []);
     } catch (err) {
-      if (err.message === 'wrong_key') {
-        list.innerHTML = '<div class="orders-empty">المفتاح غلط 🔑 تأكد إن "مفتاح قراءة الأوردرات" مطابق لـ ACCESS_KEY في كود الشيت</div>';
-      } else {
-        list.innerHTML = '<div class="orders-empty">متعرفناش نقرا الشيت ⚠️<br>تأكد إنك عملت خطوة <b>"تحديث الإصدار (v2)"</b> في كود الشيت — التعليمات في <b>google-sheets-apps-script.txt</b></div>';
+      if (err.message !== 'wrong_key') {
+        showToast('متعرفناش نقرا الشيت — راجع الإعدادات', false);
       }
-    } finally {
-      btn.disabled = false;
     }
   }
-
-  document.getElementById('ordersList').addEventListener('click', async (e) => {
-    const btn = e.target.closest('.done-btn');
-    if (!btn) return;
-    const ref = btn.dataset.ref;
-    if (doneOrders.includes(ref)) {
-      doneOrders = doneOrders.filter(r => r !== ref);
-    } else {
-      doneOrders.push(ref);
-    }
-    const ok = await saveDoneOrders(doneOrders);
-    showToast(ok ? (doneOrders.includes(ref) ? 'تمام — اتسجل أنه اتسلم ✅' : 'اتلغى تم') : 'التحديث اتسجل على الجهاز بس (السحابة مش راضية)', ok);
-    await loadOrders();
-  });
-
-  document.getElementById('ordersRefreshBtn').addEventListener('click', loadOrders);
 
   // ---------- رسائل العملاء ----------
   async function loadMessages() {
@@ -677,7 +675,9 @@ document.addEventListener('DOMContentLoaded', () => {
   fillDashStats();
   document.querySelectorAll('.dash-link, #dashOrdersBtn').forEach(el => {
     el.addEventListener('click', (e) => {
-      const target = document.querySelector(el.dataset.target || el.getAttribute('href'));
+      const href = el.dataset.target || el.getAttribute('href');
+      if (!href || !href.startsWith('#')) return;
+      const target = document.querySelector(href);
       if (!target) return;
       e.preventDefault();
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });

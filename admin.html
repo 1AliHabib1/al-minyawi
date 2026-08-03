@@ -53,16 +53,22 @@
             <h2><i class="fa-solid fa-chart-simple"></i> أهلاً بعودتك 👋</h2>
             <p class="admin-sub" id="dashDate"></p>
           </div>
-          <button class="btn btn-primary" id="dashOrdersBtn" data-target="#ordersCard"><i class="fa-solid fa-receipt"></i> الأوردرات وتقرير اليوم</button>
+          <a href="admin-orders.html" class="btn btn-primary" id="dashOrdersBtn"><i class="fa-solid fa-receipt"></i> كل الأوردرات</a>
         </div>
         <div class="dash-stats">
-          <div class="dash-stat"><span>أوردرات النهارده</span><b id="dashToday">—</b></div>
-          <div class="dash-stat"><span>إجمالي النهارده</span><b id="dashTotal">—</b></div>
+          <div class="dash-stat"><span>أوردرات النهارده</span><b id="dashToday">—</b><em id="dashTodayT" class="stat-trend"></em></div>
+          <div class="dash-stat"><span>إجمالي النهارده</span><b id="dashTotal">—</b><em id="dashTotalT" class="stat-trend"></em></div>
           <div class="dash-stat"><span>لسه مستنيين</span><b id="dashPending">—</b></div>
           <div class="dash-stat"><span>رسايل جديدة</span><b id="dashMsgs">—</b></div>
         </div>
+        <div class="dash-chart">
+          <h3 class="dash-sub-title"><i class="fa-solid fa-chart-column"></i> الأوردرات آخر 7 أيام</h3>
+          <div class="chart-bars" id="chartBars"></div>
+        </div>
+        <h3 class="dash-sub-title"><i class="fa-solid fa-bolt"></i> أحدث الطلبات</h3>
+        <div class="orders-list dash-recent" id="dashRecent"><div class="orders-empty">دوس "تحديث الأوردرات" وشوف أحدث الطلبات هنا</div></div>
         <div class="dash-links">
-          <a href="#ordersCard" class="dash-link dash-link-main"><i class="fa-solid fa-receipt"></i><span><b>الأوردرات وتقرير اليوم</b><small>تابع الطلبات الجديدة وعلّم على اللي اتسلم</small></span></a>
+          <a href="admin-orders.html" class="dash-link dash-link-main"><i class="fa-solid fa-receipt"></i><span><b>الأوردرات</b><small>افتح صفحة الأوردرات الكاملة — تفاصيل + فلترة + تم التسليم</small></span></a>
           <a href="#messagesCard" class="dash-link"><i class="fa-solid fa-envelope-open-text"></i><span><b>رسائل العملاء</b><small>رد على اللي بيكلموك من الموقع</small></span></a>
           <a href="#productFormCard" class="dash-link"><i class="fa-solid fa-boxes-stacked"></i><span><b>المنتجات</b><small>أضف، عدّل، وحُدّث الأسعار</small></span></a>
           <a href="#settingsCard" class="dash-link"><i class="fa-solid fa-gear"></i><span><b>الإعدادات</b><small>الواتساب، الشيت، الساعات، الباسورد</small></span></a>
@@ -258,19 +264,14 @@
         </div>
       </div>
 
-      <!-- ===== الأوردرات الأخيرة ===== -->
-      <div class="admin-card settings-card" id="ordersCard">
-        <h2><i class="fa-solid fa-receipt"></i> الأوردرات + تقرير النهارده</h2>
-        <p class="admin-sub">آخر 50 طلب في الشيت — غير المسلَّم أعلى الأول، وعليّم "تم التسليم" على اللي وصل</p>
-        <div class="orders-summary" id="ordersSummary" hidden>
-          <div class="os-item"><span>أوردرات النهارده</span><b id="osCount">0</b></div>
-          <div class="os-item"><span>إجمالي النهارده</span><b id="osTotal">0 ج.م</b></div>
-          <div class="os-item"><span>لسه مستنيين</span><b id="osPending">0</b></div>
+      <!-- ===== الأوردرات (صفحة مستقلة) ===== -->
+      <div class="admin-card orders-quick" id="ordersCard">
+        <div class="orders-quick-icon"><i class="fa-solid fa-receipt"></i></div>
+        <div class="orders-quick-text">
+          <h2>الأوردرات</h2>
+          <p class="admin-sub">كل الطلبات + تقرير النهارده + تفاصيل كل طلب في صفحة مستقلة</p>
         </div>
-        <div class="form-actions" style="margin-bottom:12px">
-          <button class="btn btn-primary" id="ordersRefreshBtn"><i class="fa-solid fa-rotate"></i> تحديث الأوردرات</button>
-        </div>
-        <div class="orders-list" id="ordersList"><div class="orders-empty">دوس "تحديث الأوردرات" عشان تشوف آخر الطلبات</div></div>
+        <a href="admin-orders.html" class="btn btn-primary"><i class="fa-solid fa-arrow-left"></i> افتح صفحة الأوردرات</a>
       </div>
 
     <!-- ===== رسائل العملاء ===== -->

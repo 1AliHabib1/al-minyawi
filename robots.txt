@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
+Disallow: /admin-orders.html
 
 Sitemap: https://al-minyawi.vercel.app/sitemap.xml

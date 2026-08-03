@@ -5,6 +5,19 @@
 const ADMIN_KEY = 'minyawi_admin_v1';
 const DEFAULT_PASSWORD = 'minyawi123';
 
+/* ---------- التوست (مشترك: اللوحة + صفحة الأوردرات) ---------- */
+let _toastTimer;
+function showToast(msg, ok = true) {
+  const t = document.getElementById('toast');
+  const m = document.getElementById('toastMsg');
+  if (!t || !m) return;
+  m.textContent = msg;
+  t.querySelector('i').className = ok ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
 function defaultStore() {
   return { products: [], deleted: [], disabled: [], overrides: {}, whatsapp: '', phone: '', deliveryFee: 0, video: '', telegramToken: '', telegramChatId: '', sheetUrl: DEFAULT_SHEET_URL, orderKey: DEFAULT_ORDER_KEY, hours: DEFAULT_HOURS, passHash: '' };
 }
