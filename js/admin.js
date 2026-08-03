@@ -181,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('اتحملت البيانات من السحابة ✅');
     }
     loadOrders();
+    loadMessages();
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -626,6 +627,41 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('ordersRefreshBtn').addEventListener('click', loadOrders);
+
+  // ---------- رسائل العملاء ----------
+  async function loadMessages() {
+    const list = document.getElementById('messagesList');
+    const btn = document.getElementById('msgsRefreshBtn');
+    if (btn) btn.disabled = true;
+    list.innerHTML = '<div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الرسايل...</div>';
+    const msgs = await listMessages();
+    if (btn) btn.disabled = false;
+    if (!msgs.length) {
+      list.innerHTML = '<div class="orders-empty">مفيش رسايل لسه 📭 أول ما عميل يبعت من الموقع هتظهر هنا</div>';
+      return;
+    }
+    list.innerHTML = msgs.map(m => `
+      <div class="order-item${m.status !== 'new' ? ' done' : ''}">
+        <div class="order-item-top">
+          <b>${escHtml(m.name || 'بدون اسم')}</b>
+          <span>${fmtDate(m.created)}</span>
+        </div>
+        ${m.phone ? `<div class="order-item-line"><i class="fa-solid fa-phone"></i> <span dir="ltr">${escHtml(m.phone)}</span></div>` : ''}
+        <div class="order-item-lines">${escHtml(m.message).split('\n').map(l => `<div>${l}</div>`).join('')}</div>
+        <button type="button" class="done-btn" data-msg-id="${escHtml(m.id)}">حذف الرسالة</button>
+      </div>`).join('');
+  }
+
+  document.getElementById('messagesList').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.done-btn');
+    if (!btn) return;
+    const id = btn.dataset.msgId;
+    const ok = await deleteMessage(id);
+    showToast(ok ? 'اتحذفت الرسالة 🗑️' : 'متعرفناش نحذفها.. جرب تاني', ok);
+    if (ok) loadMessages();
+  });
+
+  document.getElementById('msgsRefreshBtn').addEventListener('click', loadMessages);
 
   // ---------- تعبئة الحقول الحالية ----------
   function fillSettings() {

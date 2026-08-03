@@ -197,6 +197,52 @@ async function saveDoneOrders(refs) {
   } catch { return false; }
 }
 
+async function saveContactMessage({ name, phone, message }) {
+  if (!DEFAULT_FIREBASE_PROJECT) return false;
+  try {
+    const res = await fetch(`${fbBase()}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: {
+        name: { stringValue: String(name || '') },
+        phone: { stringValue: String(phone || '') },
+        message: { stringValue: String(message || '') },
+        status: { stringValue: 'new' },
+        created: { timestampValue: new Date().toISOString() },
+      } }),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+async function listMessages() {
+  if (!DEFAULT_FIREBASE_PROJECT) return [];
+  try {
+    const res = await fetch(`${fbBase()}/messages?pageSize=200&orderBy=created%20desc`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.documents || []).map(d => {
+      const f = d.fields || {};
+      return {
+        id: (d.name || '').split('/').pop(),
+        name: (f.name && f.name.stringValue) || '',
+        phone: (f.phone && f.phone.stringValue) || '',
+        message: (f.message && f.message.stringValue) || '',
+        status: (f.status && f.status.stringValue) || 'new',
+        created: (f.created && f.created.timestampValue) || '',
+      };
+    });
+  } catch { return []; }
+}
+
+async function deleteMessage(id) {
+  if (!DEFAULT_FIREBASE_PROJECT) return false;
+  try {
+    const res = await fetch(`${fbBase()}/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    return res.ok || res.status === 404;
+  } catch { return false; }
+}
+
 async function sha256Hex(text) {
   if (crypto && crypto.subtle) {
     try {

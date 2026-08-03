@@ -695,14 +695,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ---------- فورم التواصل ----------
-  document.getElementById('contactForm').addEventListener('submit', (e) => {
+  document.getElementById('contactForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const honey = document.getElementById('cHoney');
+    if (honey && honey.value) { document.getElementById('cfMsg').value = ''; return; }
     const name = document.getElementById('cfName').value.trim();
     const phone = document.getElementById('cfPhone').value.trim();
     const msg = document.getElementById('cfMsg').value.trim();
-    const text = `📨 *رسالة جديدة من الموقع*\n\n👤 الاسم: ${name}\n📱 التليفون: ${phone}\n\n💬 الرسالة:\n${msg}`;
-    openWhatsapp(text, 'خطوة أخيرة: افتح الواتساب واضغط إرسال 📲');
-    e.target.reset();
+    if (!/^\+?\d{8,15}$/.test(phone.replace(/[\s\-()]/g, ''))) { showToast('اكتب رقم تليفون صحيح', false); return; }
+    if (!name || !msg) { showToast('اكتب اسمك ورسالتك الأول', false); return; }
+    const last = parseInt(localStorage.getItem('minyawi_last_msg') || '0', 10);
+    if (Date.now() - last < 30000) { showToast('استنى شوية بين الرسايل', false); return; }
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    const ok = await saveContactMessage({ name, phone, message: msg });
+    btn.disabled = false;
+    if (ok) {
+      localStorage.setItem('minyawi_last_msg', String(Date.now()));
+      e.target.reset();
+      showToast('وصلت رسالتك — هنرد عليك في أقرب وقت ✅');
+    } else {
+      showToast('متعرفناش نرسل الرسالة.. جرب تاني أو كلمنا على واتساب', false);
+    }
   });
 
   // ---------- رقم التليفون والواتساب المعروضان ----------
