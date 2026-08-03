@@ -662,20 +662,27 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ---------- الهيدر والتنقل ----------
+  const menuBtn = document.getElementById('menuBtn');
+  const navClose = document.getElementById('navClose');
+  const navOverlay = document.getElementById('navOverlay');
   function closeNav() {
     nav.classList.remove('open');
-    document.getElementById('navOverlay').classList.remove('show');
+    navOverlay.classList.remove('show');
     document.body.style.overflow = '';
+    menuBtn.setAttribute('aria-expanded', 'false');
   }
-  document.getElementById('menuBtn').addEventListener('click', () => {
+  menuBtn.addEventListener('click', () => {
     nav.classList.add('open');
-    document.getElementById('navOverlay').classList.add('show');
+    navOverlay.classList.add('show');
     document.body.style.overflow = 'hidden';
+    menuBtn.setAttribute('aria-expanded', 'true');
+    navClose.focus();
   });
-  document.getElementById('navClose').addEventListener('click', closeNav);
-  document.getElementById('navOverlay').addEventListener('click', closeNav);
+  navClose.addEventListener('click', closeNav);
+  navOverlay.addEventListener('click', closeNav);
   nav.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', closeNav));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeNav(); });
+  window.addEventListener('resize', () => { if (window.innerWidth > 768) closeNav(); });
 
   window.addEventListener('scroll', () => {
     header.classList.toggle('scrolled', window.scrollY > 40);

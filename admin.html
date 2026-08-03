@@ -219,19 +219,6 @@
             <input type="password" id="sPass2" placeholder="أكتبها تاني للتأكيد" />
           </div>
           <div class="form-group">
-            <label>رابط الشيت (Google Sheets)</label>
-            <input type="url" id="sSheet" placeholder="https://script.google.com/macros/s/.../exec" dir="ltr" />
-            <small class="field-hint">كل طلب هيتسجل صف في الشيت تلقائيًا (جمب التيليجرام والواتساب) — الرابط المدمج في الموقع شغال من دلوقتي، سيبه فاضي عشان يحافظ عليه، أو غيرّ الرابط برابطك — خطوات التركيب في <b>google-sheets-apps-script.txt</b></small>
-            <div class="form-row" style="margin-top:8px;gap:8px">
-              <button type="button" class="btn btn-ghost btn-sm" id="sheetTestBtn" style="width:auto"><i class="fa-solid fa-table"></i> تجربة الشيت</button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>مفتاح قراءة الأوردرات</label>
-            <input type="text" id="sOrderKey" placeholder="minyawi-orders" dir="ltr" />
-            <small class="field-hint">لازم يطابق <b>ACCESS_KEY</b> في كود الشيت (شوف الملف النصي) — لو غيّرته في الشيت غيّره هنا كمان</small>
-          </div>
-          <div class="form-group">
             <label>ساعات العمل (النص اللي فوق في الموقع)</label>
             <input type="text" id="sHours" placeholder="مفتوح يوميًا من 9 صباحًا حتى 11 مساءً" />
             <small class="field-hint">النص ده اللي بيظهر في الشريط الأخضر العلوي — غيرّه متى شئت</small>
@@ -239,28 +226,6 @@
         </div>
         <div class="form-actions">
           <button class="btn btn-primary" id="saveSettingsBtn"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>
-        </div>
-      </div>
-
-      <!-- ===== استقبال الطلبات عبر تيليجرام ===== -->
-      <div class="admin-card settings-card">
-        <h2><i class="fa-brands fa-telegram"></i> استقبال الطلبات عبر تيليجرام</h2>
-        <p class="admin-sub">العميل يطلب من الموقع والطلب يوصل لك على تيليجرام فورًا — من غير واتساب</p>
-        <div class="settings-grid">
-          <div class="form-group">
-            <label>توكن البوت (من @BotFather)</label>
-            <input type="text" id="sTgToken" placeholder="123456:ABC-DEF..." dir="ltr" />
-            <small class="field-hint">افتح @BotFather في تيليجرام → /newbot → انسخ التوكن</small>
-          </div>
-          <div class="form-group">
-            <label>معرف المحادثة (Chat ID)</label>
-            <input type="text" id="sTgChatId" placeholder="123456789" dir="ltr" />
-            <small class="field-hint">ابعت رسالة للبوت الأول، بعدها افتح @userinfobot في تيليجرام وانسخ ID</small>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-primary" id="tgTestBtn"><i class="fa-solid fa-paper-plane"></i> إرسال رسالة تجربة</button>
-          <button class="btn btn-primary" id="saveSettingsBtn2"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
         </div>
       </div>
 

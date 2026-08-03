@@ -380,14 +380,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const ph = document.getElementById('sPhone').value.trim();
     const fee = parseFloat(document.getElementById('sDelivery').value);
     const vid = document.getElementById('sVideo').value.trim();
-    const sheet = document.getElementById('sSheet').value.trim();
     const p1 = document.getElementById('sPass1').value;
     const p2 = document.getElementById('sPass2').value;
 
     if (wa && !/^\+?\d{9,15}$/.test(wa.replace(/\s/g, ''))) { showToast('رقم الواتساب مش صحيح! مثال: 201000000000', false); return; }
     if (isNaN(fee) || fee < 0) { showToast('اكتب رسوم توصيل صحيحة (0 أو أكتر)', false); return; }
     if (vid && !/^https?:\/\//.test(vid)) { showToast('رابط الفيديو لازم يبدأ بـ https://', false); return; }
-    if (sheet && !/^https:\/\//.test(sheet)) { showToast('رابط الشيت لازم يبدأ بـ https://', false); return; }
 
     let passChanged = false;
     if (p1 || p2) {
@@ -408,61 +406,10 @@ document.addEventListener('DOMContentLoaded', () => {
     store.phone = ph;
     store.deliveryFee = fee || 0;
     store.video = vid;
-    store.sheetUrl = sheet;
-    store.orderKey = document.getElementById('sOrderKey').value.trim() || DEFAULT_ORDER_KEY;
     store.hours = document.getElementById('sHours').value.trim() || DEFAULT_HOURS;
-    store.telegramToken = document.getElementById('sTgToken').value.trim();
-    store.telegramChatId = document.getElementById('sTgChatId').value.trim();
     saveAdminStore(store);
     pushCloud();
     showToast(passChanged ? 'تم حفظ الإعدادات وتغيير كلمة المرور ✅' : 'تم حفظ الإعدادات ✅');
-  });
-
-  // ---------- الشيت: تجربة ----------
-  document.getElementById('sheetTestBtn').addEventListener('click', async () => {
-    const url = document.getElementById('sSheet').value.trim();
-    if (!url) { showToast('حط رابط الشيت الأول', false); return; }
-    if (!/^https:\/\//.test(url)) { showToast('الرابط لازم يبدأ بـ https://', false); return; }
-    const btn = document.getElementById('sheetTestBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
-    const ok = await sendToSheet(url, { ref: 'TEST', name: 'رسالة تجربة', phone: '-', address: '-', notes: 'تجربة من لوحة التحكم', delivery: 0, total: 0, lines: '-' });
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-table"></i> تجربة الشيت';
-    if (ok) {
-      showToast('وصلت الشيت ✅ افتح الشيت وشوف آخر صف');
-    } else {
-      showToast('الإرسال فشل — تأكد من نشر الرابط: Anyone + Execute as Me', false);
-    }
-  });
-
-  // ---------- تيليجرام: حفظ + تجربة ----------
-  document.getElementById('saveSettingsBtn2').addEventListener('click', async () => {
-    const token = document.getElementById('sTgToken').value.trim();
-    const chatId = document.getElementById('sTgChatId').value.trim();
-    if (!token || !chatId) { showToast('اكتب التوكن ومعرف المحادثة الأول', false); return; }
-    store.telegramToken = token;
-    store.telegramChatId = chatId;
-    saveAdminStore(store);
-    pushCloud();
-    showToast('تم حفظ إعدادات تيليجرام ✅');
-  });
-
-  document.getElementById('tgTestBtn').addEventListener('click', async () => {
-    const token = document.getElementById('sTgToken').value.trim();
-    const chatId = document.getElementById('sTgChatId').value.trim();
-    if (!token || !chatId) { showToast('اكتب التوكن ومعرف المحادثة الأول', false); return; }
-    const btn = document.getElementById('tgTestBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
-    const ok = await sendTelegramMessage({ token, chatId }, '✅ رسالة تجربة من لوحة تحكم المنياوي — البوت شغال!');
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إرسال رسالة تجربة';
-    if (ok) {
-      showToast('اتبعتت الرسالة ✅ افتح تيليجرام وشوف');
-    } else {
-      showToast('الإرسال فشل — راجع التوكن ومعرف المحادثة', false);
-    }
   });
 
   // ---------- رفع فيديو من الجهاز ----------
@@ -616,20 +563,26 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadOrders() {
     const url = (store.sheetUrl || '').trim();
     const key = (store.orderKey || '').trim() || DEFAULT_ORDER_KEY;
-    if (!url) { showToast('حط رابط الشيت الأول في الإعدادات', false); return; }
+    if (!url) { showToast('حط رابط الشيت الأول في "إعدادات الطلبات"', false); return; }
+
+    const cache = getOrdersCache();
+    if (cache && cache.orders.length) {
+      const [doneRes] = await Promise.all([loadDoneOrders()]);
+      doneOrders = doneRes;
+      renderDash(cache.orders);
+    }
+
     try {
-      const [res, doneRes] = await Promise.all([
-        fetch(`${url}?k=${encodeURIComponent(key)}`, { cache: 'no-store' }),
+      const [orders, doneRes] = await Promise.all([
+        fetchOrders(url, key, 25000),
         loadDoneOrders(),
       ]);
       doneOrders = doneRes;
-      if (!res.ok) throw new Error('http');
-      const data = await res.json();
-      if (!data || data.ok !== true) throw new Error(data && data.error === 'wrong_key' ? 'wrong_key' : 'bad');
-      renderDash(data.orders || []);
+      saveOrdersCache(orders);
+      renderDash(orders);
     } catch (err) {
-      if (err.message !== 'wrong_key') {
-        showToast('متعرفناش نقرا الشيت — راجع الإعدادات', false);
+      if (!cache || !cache.orders.length) {
+        showToast('متعرفناش نقرا الشيت — راجع "إعدادات الطلبات" أو كود الشيت (v2)', false);
       }
     }
   }
@@ -690,11 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (store.phone) document.getElementById('sPhone').value = store.phone;
     document.getElementById('sDelivery').value = store.deliveryFee || 25;
     if (store.video) document.getElementById('sVideo').value = store.video;
-    if (store.sheetUrl) document.getElementById('sSheet').value = store.sheetUrl;
-    document.getElementById('sOrderKey').value = store.orderKey || DEFAULT_ORDER_KEY;
     if (store.hours) document.getElementById('sHours').value = store.hours;
-    if (store.telegramToken) document.getElementById('sTgToken').value = store.telegramToken;
-    if (store.telegramChatId) document.getElementById('sTgChatId').value = store.telegramChatId;
   }
   fillSettings();
 });

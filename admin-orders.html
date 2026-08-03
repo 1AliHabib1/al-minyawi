@@ -58,6 +58,7 @@
           <div class="os-item"><span>إجمالي النهارده</span><b id="osTotal">0 ج.م</b></div>
           <div class="os-item"><span>لسه مستنيين</span><b id="osPending">0</b></div>
         </div>
+        <p class="orders-status" id="ordersStatus" hidden></p>
 
         <div class="orders-tools" style="margin-bottom:12px">
           <div class="filter-chips" id="ordersFilterBar">
@@ -72,6 +73,39 @@
         </div>
 
         <div class="orders-list" id="ordersList"><div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الأوردرات...</div></div>
+      </div>
+
+      <!-- ===== إعدادات الطلبات (كل ما يخص الأوردر في مكان واحد) ===== -->
+      <div class="admin-card settings-card" id="ordersSettingsCard">
+        <h2><i class="fa-solid fa-gear"></i> إعدادات الطلبات</h2>
+        <p class="admin-sub">كل حاجة تخص استقبال الأوردرات هنا بس — الشيت + التيليجرام</p>
+        <div class="settings-grid">
+          <div class="form-group">
+            <label>رابط الشيت (Google Sheets)</label>
+            <input type="url" id="osSheet" placeholder="https://script.google.com/macros/s/.../exec" dir="ltr" />
+            <small class="field-hint">كل طلب هيتسجل صف في الشيت تلقائيًا — خطوات التركيب في <b>google-sheets-apps-script.txt</b></small>
+          </div>
+          <div class="form-group">
+            <label>مفتاح قراءة الأوردرات</label>
+            <input type="text" id="osOrderKey" placeholder="minyawi-orders" dir="ltr" />
+            <small class="field-hint">لازم يطابق <b>ACCESS_KEY</b> في كود الشيت (شوف الملف النصي)</small>
+          </div>
+          <div class="form-group">
+            <label>توكن بوت تيليجرام (من @BotFather)</label>
+            <input type="text" id="osTgToken" placeholder="123456:ABC-DEF..." dir="ltr" />
+            <small class="field-hint">كل طلب جديد هتيجيك رسالة هنا فورًا</small>
+          </div>
+          <div class="form-group">
+            <label>معرف المحادثة (Chat ID)</label>
+            <input type="text" id="osTgChatId" placeholder="123456789" dir="ltr" />
+            <small class="field-hint">ابعت للبوت أول مرة، بعدها افتح @userinfobot وانسخ ID</small>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="osSaveBtn"><i class="fa-solid fa-floppy-disk"></i> حفظ إعدادات الطلبات</button>
+          <button class="btn btn-ghost" id="osSheetTestBtn"><i class="fa-solid fa-table"></i> تجربة الشيت</button>
+          <button class="btn btn-ghost" id="osTgTestBtn"><i class="fa-solid fa-paper-plane"></i> رسالة تجربة</button>
+        </div>
       </div>
     </div>
   </div>

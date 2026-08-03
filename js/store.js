@@ -85,6 +85,44 @@ function fetchWithTimeout(url, opts, ms) {
   return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
 }
 
+/* ============================================================
+   تحميل الأوردرات بسرعة وموثوقية:
+   - مهلة زمنية على كل طلب (مفيش انتظار للفشل)
+   - نسخة محفوظة آخر مرة → تظهر فورًا، والتحديث في الخلفية
+   ============================================================ */
+
+const ORDERS_CACHE_KEY = 'minyawi_orders_cache_v1';
+
+function getOrdersCache() {
+  try {
+    const raw = localStorage.getItem(ORDERS_CACHE_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    if (c && Array.isArray(c.orders) && typeof c.t === 'number') return c;
+  } catch { }
+  return null;
+}
+
+function saveOrdersCache(orders) {
+  try { localStorage.setItem(ORDERS_CACHE_KEY, JSON.stringify({ t: Date.now(), orders })); } catch { }
+}
+
+function ordersAgeText(cache) {
+  if (!cache) return '';
+  const mins = Math.floor((Date.now() - cache.t) / 60000);
+  if (mins < 1) return 'من ثانية';
+  if (mins < 60) return `منذ ${mins} دقيقة`;
+  return `منذ ${Math.floor(mins / 60)} ساعة`;
+}
+
+async function fetchOrders(url, key, ms) {
+  const res = await fetchWithTimeout(`${url}?k=${encodeURIComponent(key)}`, { cache: 'no-store' }, ms || 25000);
+  if (!res.ok) throw new Error('http');
+  const data = await res.json();
+  if (!data || data.ok !== true) throw new Error(data && data.error === 'wrong_key' ? 'wrong_key' : 'bad');
+  return data.orders || [];
+}
+
 async function sendTelegramMessage(tg, text) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const start = Date.now();
@@ -121,7 +159,7 @@ function fbBase() {
 
 async function cloudLoadImgs() {
   try {
-    const res = await fetch(`${fbBase()}/imgs?pageSize=5000`);
+    const res = await fetchWithTimeout(`${fbBase()}/imgs?pageSize=5000`, {}, 10000);
     if (!res.ok) return null;
     const list = await res.json();
     const out = {};
@@ -136,7 +174,7 @@ async function cloudLoadImgs() {
 async function cloudLoad() {
   if (!DEFAULT_FIREBASE_PROJECT) return null;
   try {
-    const res = await fetch(`${fbBase()}/state/store`);
+    const res = await fetchWithTimeout(`${fbBase()}/state/store`, {}, 12000);
     if (!res.ok) return null;
     const doc = await res.json();
     const store = JSON.parse(doc.fields.store.stringValue || 'null');
@@ -165,18 +203,18 @@ async function cloudSave(store) {
       const o = clean.overrides[id];
       if (o && o.img) { imgs[id] = o.img; delete o.img; }
     });
-    const res = await fetch(`${fbBase()}/state/store?updateMask.fieldPaths=store`, {
+    const res = await fetchWithTimeout(`${fbBase()}/state/store?updateMask.fieldPaths=store`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields: { store: { stringValue: JSON.stringify(clean) } } }),
-    });
+    }, 15000);
     if (!res.ok) return false;
     await Promise.all(Object.entries(imgs).map(([id, img]) =>
-      fetch(`${fbBase()}/imgs/${id}?updateMask.fieldPaths=img`, {
+      fetchWithTimeout(`${fbBase()}/imgs/${id}?updateMask.fieldPaths=img`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: { img: { stringValue: img } } }),
-      }).catch(() => {})));
+      }, 10000).catch(() => {})));
     const prev = await cloudLoadImgs();
     if (prev) {
       const stale = Object.keys(prev).filter(id => !imgs[id]);
@@ -190,7 +228,7 @@ async function cloudSave(store) {
 async function loadDoneOrders() {
   if (!DEFAULT_FIREBASE_PROJECT) return [];
   try {
-    const res = await fetch(`${fbBase()}/state/doneOrders`);
+    const res = await fetchWithTimeout(`${fbBase()}/state/doneOrders`, {}, 10000);
     if (!res.ok) return [];
     const doc = await res.json();
     const arr = JSON.parse((doc.fields && doc.fields.data && doc.fields.data.stringValue) || '[]');
@@ -201,11 +239,11 @@ async function loadDoneOrders() {
 async function saveDoneOrders(refs) {
   if (!DEFAULT_FIREBASE_PROJECT) return false;
   try {
-    const res = await fetch(`${fbBase()}/state/doneOrders?updateMask.fieldPaths=data`, {
+    const res = await fetchWithTimeout(`${fbBase()}/state/doneOrders?updateMask.fieldPaths=data`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields: { data: { stringValue: JSON.stringify(refs) } } }),
-    });
+    }, 15000);
     return res.ok;
   } catch { return false; }
 }
@@ -231,7 +269,7 @@ async function saveContactMessage({ name, phone, message }) {
 async function listMessages() {
   if (!DEFAULT_FIREBASE_PROJECT) return [];
   try {
-    const res = await fetch(`${fbBase()}/messages?pageSize=200&orderBy=created%20desc`);
+    const res = await fetchWithTimeout(`${fbBase()}/messages?pageSize=200&orderBy=created%20desc`, {}, 10000);
     if (!res.ok) return [];
     const data = await res.json();
     return (data.documents || []).map(d => {
@@ -251,7 +289,7 @@ async function listMessages() {
 async function deleteMessage(id) {
   if (!DEFAULT_FIREBASE_PROJECT) return false;
   try {
-    const res = await fetch(`${fbBase()}/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const res = await fetchWithTimeout(`${fbBase()}/messages/${encodeURIComponent(id)}`, { method: 'DELETE' }, 10000);
     return res.ok || res.status === 404;
   } catch { return false; }
 }

@@ -89,6 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
     lastOrders = orders;
     const list = document.getElementById('ordersList');
     const summary = document.getElementById('ordersSummary');
+    if (!orders.length) {
+      summary.hidden = true;
+      list.innerHTML = '<div class="orders-empty">مفيش أوردرات لسه 🍃 أول ما يجي طلب هيظهر هنا</div>';
+      return;
+    }
     const today = orders.filter(o => isToday(o.date));
     const todayTotal = today.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
     const pending = orders.filter(o => !orderDone(o.ref)).length;
@@ -139,37 +144,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
   }
 
-  async function loadOrders() {
+  function renderStatus(text, warn) {
+    const el = document.getElementById('ordersStatus');
+    if (!el) return;
+    el.hidden = !text;
+    el.textContent = text;
+    el.style.color = warn ? '#b45309' : '#64748b';
+  }
+
+  let slowHinted = false;
+
+  async function loadOrders(silent) {
     const url = (store.sheetUrl || '').trim();
     const key = (store.orderKey || '').trim() || DEFAULT_ORDER_KEY;
     const list = document.getElementById('ordersList');
     const btn = document.getElementById('ordersRefreshBtn');
-    if (!url) { showToast('حط رابط الشيت الأول في الإعدادات', false); return; }
+    if (!url) { showToast('حط رابط الشيت الأول في "إعدادات الطلبات"', false); return; }
+
+    // 1) عرض آخر نسخة محفوظة فورًا
+    const cache = getOrdersCache();
+    if (cache && cache.orders.length) {
+      renderOrders(cache.orders);
+      renderStatus(`آخر تحديث: ${ordersAgeText(cache)}`);
+    } else if (!silent) {
+      list.innerHTML = '<div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الأوردرات...</div>';
+    }
+    if (silent && cache && Date.now() - cache.t < 30000) return;
+
+    // 2) التحديث من الشيت في الخلفية مع مهلة زمنية
     btn.disabled = true;
-    list.innerHTML = '<div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الأوردرات...</div>';
+    const start = Date.now();
+    const tick = setInterval(() => {
+      const el = Date.now() - start;
+      renderStatus(`بأحدث البيانات من الشيت... ${Math.floor(el / 1000)} ث`);
+      if (el > 10000 && !slowHinted) {
+        slowHinted = true;
+        renderStatus('الشيت بياخد وقت في أول تحميل (كولد ستارت) — الصفحة شغالة والبيانات هتيجي لحد ما تظهر', true);
+      }
+    }, 1000);
     try {
-      const [res, doneRes] = await Promise.all([
-        fetch(`${url}?k=${encodeURIComponent(key)}`, { cache: 'no-store' }),
+      const [orders, doneRes] = await Promise.all([
+        fetchOrders(url, key, 25000),
         loadDoneOrders(),
       ]);
       doneOrders = doneRes;
-      if (!res.ok) throw new Error('http');
-      const data = await res.json();
-      if (!data || data.ok !== true) throw new Error(data && data.error === 'wrong_key' ? 'wrong_key' : 'bad');
-      const orders = data.orders || [];
-      if (!orders.length) {
-        document.getElementById('ordersSummary').hidden = true;
-        list.innerHTML = '<div class="orders-empty">مفيش أوردرات لسه 🍃 أول ما يجي طلب هيظهر هنا</div>';
-      } else {
-        renderOrders(orders);
-      }
+      saveOrdersCache(orders);
+      renderOrders(orders);
+      renderStatus(`آخر تحديث: ${ordersAgeText(getOrdersCache())}`);
+      slowHinted = false;
     } catch (err) {
-      if (err.message === 'wrong_key') {
+      if (cache && cache.orders.length) {
+        renderOrders(cache.orders);
+        renderStatus(`الشيت مش راضٍ يرد حاليًا — معروض آخر نسخة (${ordersAgeText(cache)})`, true);
+        showToast('تعذر الاتصال بالشيت — معروض آخر نسخة محفوظة', false);
+      } else if (err.message === 'wrong_key') {
         list.innerHTML = '<div class="orders-empty">المفتاح غلط 🔑 تأكد إن "مفتاح قراءة الأوردرات" مطابق لـ ACCESS_KEY في كود الشيت</div>';
       } else {
         list.innerHTML = '<div class="orders-empty">متعرفناش نقرا الشيت ⚠️<br>تأكد إنك عملت خطوة <b>"تحديث الإصدار (v2)"</b> في كود الشيت — التعليمات في <b>google-sheets-apps-script.txt</b></div>';
       }
     } finally {
+      clearInterval(tick);
       btn.disabled = false;
     }
   }
@@ -186,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const ok = await saveDoneOrders(doneOrders);
       showToast(ok ? (doneOrders.includes(ref) ? 'تمام — اتسجل أنه اتسلم ✅' : 'اتلغى تم') : 'التحديث اتسجل على الجهاز بس (السحابة مش راضية)', ok);
-      await loadOrders();
+      await loadOrders(true);
       return;
     }
     const item = e.target.closest('.order-expand');
@@ -200,7 +234,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.getElementById('ordersRefreshBtn').addEventListener('click', loadOrders);
+  document.getElementById('ordersRefreshBtn').addEventListener('click', () => loadOrders(false));
+
+  // ---------- إعدادات الطلبات ----------
+  function fillOrderSettings() {
+    const s = getAdminStore();
+    document.getElementById('osSheet').value = s.sheetUrl || '';
+    document.getElementById('osOrderKey').value = s.orderKey || DEFAULT_ORDER_KEY;
+    document.getElementById('osTgToken').value = s.telegramToken || '';
+    document.getElementById('osTgChatId').value = s.telegramChatId || '';
+  }
+
+  document.getElementById('osSaveBtn').addEventListener('click', () => {
+    const s = getAdminStore();
+    const sheet = document.getElementById('osSheet').value.trim();
+    if (sheet && !/^https:\/\//.test(sheet)) { showToast('رابط الشيت لازم يبدأ بـ https://', false); return; }
+    s.sheetUrl = sheet;
+    s.orderKey = document.getElementById('osOrderKey').value.trim() || DEFAULT_ORDER_KEY;
+    s.telegramToken = document.getElementById('osTgToken').value.trim();
+    s.telegramChatId = document.getElementById('osTgChatId').value.trim();
+    saveAdminStore(s);
+    cloudSave(s);
+    showToast('تم حفظ إعدادات الطلبات ✅');
+  });
+
+  document.getElementById('osSheetTestBtn').addEventListener('click', async () => {
+    const url = document.getElementById('osSheet').value.trim();
+    if (!url) { showToast('حط رابط الشيت الأول', false); return; }
+    const btn = document.getElementById('osSheetTestBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+    const ok = await sendToSheet(url, { ref: 'TEST', name: 'رسالة تجربة', phone: '-', address: '-', notes: 'تجربة من صفحة الأوردرات', delivery: 0, total: 0, lines: '-' });
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-table"></i> تجربة الشيت';
+    showToast(ok ? 'وصلت الشيت ✅ افتح الشيت وشوف آخر صف' : 'الإرسال فشل — تأكد من نشر الرابط: Anyone + Execute as Me', ok);
+  });
+
+  document.getElementById('osTgTestBtn').addEventListener('click', async () => {
+    const token = document.getElementById('osTgToken').value.trim();
+    const chatId = document.getElementById('osTgChatId').value.trim();
+    if (!token || !chatId) { showToast('اكتب التوكن ومعرف المحادثة الأول', false); return; }
+    const btn = document.getElementById('osTgTestBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+    const ok = await sendTelegramMessage({ token, chatId }, '✅ رسالة تجربة من صفحة الأوردرات — البوت شغال!');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> رسالة تجربة';
+    showToast(ok ? 'اتبعتت الرسالة ✅ افتح تيليجرام وشوف' : 'الإرسال فشل — راجع التوكن ومعرف المحادثة', ok);
+  });
+
+  fillOrderSettings();
+  loadOrders(false);
 
   const filterBar = document.getElementById('ordersFilterBar');
   if (filterBar) {

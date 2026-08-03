@@ -41,6 +41,13 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   try {
+    // نسخة مخزنة (٣٠ ثانية) — عشان قراءة الأوردرات تبقى سريعة
+    var cache = CacheService.getScriptCache();
+    var cached = cache.get('orders:' + key);
+    if (cached) {
+      return ContentService.createTextOutput(cached)
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
     var values = sheet.getDataRange().getValues();
     var orders = [];
@@ -60,7 +67,9 @@ function doGet(e) {
     }
     orders.reverse();
     if (orders.length > 50) orders = orders.slice(0, 50);
-    return ContentService.createTextOutput(JSON.stringify({ ok: true, orders: orders }))
+    var out = JSON.stringify({ ok: true, orders: orders });
+    cache.put('orders:' + key, out, 30);
+    return ContentService.createTextOutput(out)
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ ok: false, error: 'read_failed' }))
@@ -90,6 +99,11 @@ function doGet(e) {
      ← دوس علامة التعديل (القلم) ← Version: New version ← Deploy
    - الرابط هيبقى نفس الرابط — ما يتغيرش
    - لو الرابط اتغير (لو عملت New deployment جديد) حط الرابط الجديد في اللوحة
+
+الخطوة 6 (مهمة جدًا — السرعة): نزّل نسخة الكود السريع
+   - النسخة الحالية فيها كاش (CacheService) عشان قراءة الأوردرات متبقاش بطيئة
+   - لو نسخت الكود قبل كده: اعمل copy للكود الجديد ده كله (مع خطوة 5 تحديث الإصدار)
+   - أول تحديث بعد خمول هيلاقي تأخير صغير (كولد ستارت من جوجل) — اللي بعده بيبقى فوري
 
 ============================================================
 ملحوظات
