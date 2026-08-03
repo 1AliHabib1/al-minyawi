@@ -26,8 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastOrders = [];
   let orderFilter = 'all';
   let orderSearch = '';
+  const expandedRefs = new Set();
 
   const orderDone = (ref) => doneOrders.includes(ref);
+  const waNum = (p) => {
+    const d = String(p || '').replace(/[^0-9]/g, '');
+    if (!d) return '';
+    if (d.startsWith('0')) return '20' + d.slice(1);
+    return d.startsWith('2') ? d : '2' + d;
+  };
 
   const cloudInit = (async () => {
     try {
@@ -111,8 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return true;
     });
     const sorted = [...filtered].sort((a, b) => {
-      if (orderDone(a.ref) !== orderDone(b.ref)) return orderDone(a.ref) ? 1 : -1;
-      return 0;
+      const da = orderDone(a.ref) ? 1 : 0;
+      const db = orderDone(b.ref) ? 1 : 0;
+      if (da !== db) return da - db;
+      return new Date(b.date || 0) - new Date(a.date || 0);
     });
     if (!sorted.length) {
       list.innerHTML = '<div class="orders-empty">مفيش نتايج 🍃</div>';
@@ -120,14 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     list.innerHTML = sorted.map(o => {
       const done = orderDone(o.ref);
+      const open = expandedRefs.has(o.ref);
       return `
-        <div class="order-item order-expand${done ? ' done' : ''}" data-ref="${escHtml(o.ref)}">
+        <div class="order-item order-expand${done ? ' done' : ''}${open ? ' expanded' : ''}" data-ref="${escHtml(o.ref)}">
           <div class="order-item-top">
             <b>${escHtml(o.ref || '—')} ${done ? '<span class="chip chip-done">تم التسليم</span>' : '<span class="chip chip-new">جديد</span>'}<span class="expand-arrow"><i class="fa-solid fa-chevron-down"></i></span></b>
             <span>${fmtDate(o.date)}</span>
           </div>
           <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
-          <div class="order-details" hidden>
+          <div class="order-details"${open ? '' : ' hidden'}>
             ${o.lines ? `<div class="order-item-lines">${escHtml(o.lines).split('\n').map(l => `<div>${l}</div>`).join('')}</div>` : ''}
             ${o.address ? `<div class="order-item-line"><i class="fa-solid fa-location-dot"></i> ${escHtml(o.address)}</div>` : ''}
             ${o.notes ? `<div class="order-item-line"><i class="fa-solid fa-note-sticky"></i> ${escHtml(o.notes)}</div>` : ''}
@@ -136,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <b>الإجمالي ${escHtml(o.total || '0')} ج.م</b>
             </div>
             <div class="order-detail-actions">
-              ${o.phone ? `<a href="https://wa.me/2${String(o.phone).replace(/[^0-9]/g, '')}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm"><i class="fa-brands fa-whatsapp"></i> كلم العميل</a>` : ''}
+              ${o.phone ? `<a href="https://wa.me/${escHtml(waNum(o.phone))}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm wa-link"><i class="fa-brands fa-whatsapp"></i> كلم العميل</a>` : ''}
               <button type="button" class="done-btn" data-ref="${escHtml(o.ref)}">${done ? 'إلغاء تم' : 'تم التسليم ✔'}</button>
             </div>
           </div>
@@ -155,8 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let slowHinted = false;
 
   async function loadOrders(silent) {
-    const url = (store.sheetUrl || '').trim();
-    const key = (store.orderKey || '').trim() || DEFAULT_ORDER_KEY;
+    const s = getAdminStore();
+    const url = (s.sheetUrl || '').trim();
+    const key = (s.orderKey || '').trim() || DEFAULT_ORDER_KEY;
     const list = document.getElementById('ordersList');
     const btn = document.getElementById('ordersRefreshBtn');
     if (!url) { if (!silent) showToast('حط رابط الشيت الأول في "إعدادات الطلبات"', false); return; }
@@ -184,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const [orders, doneRes] = await Promise.all([
         fetchOrders(url, key, 25000),
-        loadDoneOrders(),
+        loadDoneOrders().catch(() => []),
       ]);
       doneOrders = doneRes;
       saveOrdersCache(orders);
@@ -224,12 +235,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const item = e.target.closest('.order-expand');
     if (!item) return;
+    if (e.target.closest('a.wa-link')) { e.stopPropagation(); return; }
+    const ref = item.dataset.ref;
     const details = item.querySelector('.order-details');
-    const arrow = item.querySelector('.expand-arrow');
     if (details) {
-      details.hidden = !details.hidden;
-      if (arrow) arrow.classList.toggle('rotated');
-      item.classList.toggle('expanded');
+      const opening = details.hidden;
+      details.hidden = !opening;
+      item.classList.toggle('expanded', opening);
+      if (opening) expandedRefs.add(ref); else expandedRefs.delete(ref);
     }
   });
 

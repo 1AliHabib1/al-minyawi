@@ -561,13 +561,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadOrders() {
-    const url = (store.sheetUrl || '').trim();
-    const key = (store.orderKey || '').trim() || DEFAULT_ORDER_KEY;
+    const s = getAdminStore();
+    const url = (s.sheetUrl || '').trim();
+    const key = (s.orderKey || '').trim() || DEFAULT_ORDER_KEY;
     if (!url) { showToast('حط رابط الشيت الأول في "إعدادات الطلبات"', false); return; }
 
     const cache = getOrdersCache();
     if (cache && cache.orders.length) {
-      const [doneRes] = await Promise.all([loadDoneOrders()]);
+      const [doneRes] = await Promise.all([loadDoneOrders().catch(() => [])]);
       doneOrders = doneRes;
       renderDash(cache.orders);
     }
@@ -575,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const [orders, doneRes] = await Promise.all([
         fetchOrders(url, key, 25000),
-        loadDoneOrders(),
+        loadDoneOrders().catch(() => []),
       ]);
       doneOrders = doneRes;
       saveOrdersCache(orders);
