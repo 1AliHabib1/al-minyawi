@@ -31,6 +31,9 @@ function doPost(e) {
     p.total || '',
     p.lines || ''
   ]);
+  // مسح الكاش عشان الطلب الجديد يظهر فورًا في اللوحة
+  var cache = CacheService.getScriptCache();
+  cache.remove('orders:' + (p.k || ACCESS_KEY));
   return ContentService.createTextOutput('OK');
 }
 

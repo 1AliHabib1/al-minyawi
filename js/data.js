@@ -76,8 +76,6 @@ const CATEGORY_LABELS = {
 
 const DEFAULT_WHATSAPP = '201030809915';
 const DEFAULT_PHONE = '01030809915';
-const DEFAULT_TELEGRAM_BOT_TOKEN = '8924066575:AAG3twL0AluqsA--EfNTaYfoapu10CyDBW0';
-const DEFAULT_TELEGRAM_CHAT_ID = '8829988925';
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyolS_Nc8Rf_wJtgS3oquNUDfc6Wf4htbNxzDK0L_eiGccyz2dbTeUYjyvOVwiydd0K/exec';
 const DEFAULT_FIREBASE_PROJECT = 'al-minyawi';
 const DEFAULT_ORDER_KEY = 'minyawi-orders';

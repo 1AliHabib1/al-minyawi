@@ -183,7 +183,7 @@
         <p class="section-sub">جولة قصيرة جوه المنياوي.. تشوف بنفسك جودة الخضار والفاكهة</p>
       </div>
       <div class="video-wrap">
-        <video id="storeVideo" controls autoplay muted loop playsinline preload="metadata">
+        <video id="storeVideo" controls playsinline preload="none" poster="assets/video-poster.svg">
           <source src="assets/video.mp4" type="video/mp4" />
           متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉
         </video>
@@ -285,6 +285,7 @@
           <input type="text" id="cfName" placeholder="اسمك" required />
           <input type="tel" id="cfPhone" placeholder="رقم التليفون" required />
           <textarea id="cfMsg" placeholder="اكتب رسالتك هنا..." rows="4" required></textarea>
+          <div class="honeypot" aria-hidden="true"><input type="text" id="cfHoney" tabindex="-1" autocomplete="off" /></div>
           <button type="submit" class="btn btn-primary btn-block">ابعت الرسالة <i class="fa-solid fa-paper-plane"></i></button>
         </form>
       </div>

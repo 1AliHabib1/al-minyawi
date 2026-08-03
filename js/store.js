@@ -70,8 +70,8 @@ function getWhatsapp(store) {
 
 function getTelegramConfig(store) {
   return {
-    token: (store.telegramToken || '').trim() || DEFAULT_TELEGRAM_BOT_TOKEN,
-    chatId: (store.telegramChatId || '').trim() || DEFAULT_TELEGRAM_CHAT_ID,
+    token: (store.telegramToken || '').trim(),
+    chatId: (store.telegramChatId || '').trim(),
   };
 }
 
@@ -240,6 +240,29 @@ async function saveDoneOrders(refs) {
   if (!DEFAULT_FIREBASE_PROJECT) return false;
   try {
     const res = await fetchWithTimeout(`${fbBase()}/state/doneOrders?updateMask.fieldPaths=data`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { data: { stringValue: JSON.stringify(refs) } } }),
+    }, 15000);
+    return res.ok;
+  } catch { return false; }
+}
+
+async function loadPreparingOrders() {
+  if (!DEFAULT_FIREBASE_PROJECT) return [];
+  try {
+    const res = await fetchWithTimeout(`${fbBase()}/state/preparingOrders`, {}, 10000);
+    if (!res.ok) return [];
+    const doc = await res.json();
+    const arr = JSON.parse((doc.fields && doc.fields.data && doc.fields.data.stringValue) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+}
+
+async function savePreparingOrders(refs) {
+  if (!DEFAULT_FIREBASE_PROJECT) return false;
+  try {
+    const res = await fetchWithTimeout(`${fbBase()}/state/preparingOrders?updateMask.fieldPaths=data`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields: { data: { stringValue: JSON.stringify(refs) } } }),

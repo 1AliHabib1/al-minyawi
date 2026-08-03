@@ -38,6 +38,7 @@
         </a>
         <div class="admin-header-actions">
           <a href="admin.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-gauge-high"></i> اللوحة الرئيسية</a>
+          <button class="btn btn-ghost btn-sm notif-btn" id="notifBtn"><i class="fa-solid fa-bell"></i> <span id="notifLabel">فعّل التنبيهات</span></button>
           <button class="btn btn-primary btn-sm" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
         </div>
       </div>
@@ -47,8 +48,8 @@
       <div class="admin-card settings-card" id="ordersCard">
         <div class="dash-head">
           <div>
-            <h2><i class="fa-solid fa-receipt"></i> الأوردرات</h2>
-            <p class="admin-sub">دوس على أي طلب عشان تشوف تفاصيله — وعليّم "تم التسليم" على اللي وصل</p>
+            <h2><i class="fa-solid fa-kitchen-set"></i> مطبخ الأوردرات</h2>
+            <p class="admin-sub">كل عمود حالة — انقل الطلب بالضغط على زراره، وتنبيه صوتي + إشعار لما يجي طلب جديد</p>
           </div>
           <button class="btn btn-primary" id="ordersRefreshBtn"><i class="fa-solid fa-rotate"></i> تحديث</button>
         </div>
@@ -60,19 +61,25 @@
         </div>
         <p class="orders-status" id="ordersStatus" hidden></p>
 
-        <div class="orders-tools" style="margin-bottom:12px">
-          <div class="filter-chips" id="ordersFilterBar">
-            <button type="button" class="filter-chip active" data-filter="all">الكل</button>
-            <button type="button" class="filter-chip" data-filter="new">جديد</button>
-            <button type="button" class="filter-chip" data-filter="done">تم التسليم</button>
-          </div>
-          <div class="orders-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="ordersSearch" placeholder="دور برقم الطلب أو الاسم أو التليفون..." />
-          </div>
+        <div class="orders-search" style="margin-bottom:12px">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="ordersSearch" placeholder="دور برقم الطلب أو الاسم أو التليفون..." />
         </div>
 
-        <div class="orders-list" id="ordersList"><div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الأوردرات...</div></div>
+        <div class="kanban" id="kanban">
+          <div class="kanban-col accent-blue" id="col-wrap-new">
+            <div class="kanban-col-head"><i class="fa-solid fa-bolt"></i> جديد <span class="kanban-count" id="colCount-new">0</span></div>
+            <div class="kanban-list" id="col-new"></div>
+          </div>
+          <div class="kanban-col accent-amber" id="col-wrap-preparing">
+            <div class="kanban-col-head"><i class="fa-solid fa-utensils"></i> قيد التجهيز <span class="kanban-count" id="colCount-preparing">0</span></div>
+            <div class="kanban-list" id="col-preparing"></div>
+          </div>
+          <div class="kanban-col accent-green" id="col-wrap-done">
+            <div class="kanban-col-head"><i class="fa-solid fa-check-double"></i> اتسلم <span class="kanban-count" id="colCount-done">0</span></div>
+            <div class="kanban-list" id="col-done"></div>
+          </div>
+        </div>
       </div>
 
       <!-- ===== إعدادات الطلبات (كل ما يخص الأوردر في مكان واحد) ===== -->

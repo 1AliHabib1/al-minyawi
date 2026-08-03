@@ -1,6 +1,7 @@
 /* ============================================================
-   المنياوي | صفحة الأوردرات المستقلة
-   قائمة الطلبات + تفاصيل + فلترة + بحث + تم التسليم
+   المنياوي | مطبخ الأوردرات
+   لوحة كانبان: جديد → قيد التجهيز → اتسلم
+   + تنبيه صوتي وإشعار متصفح عند وصول طلب جديد (كل 15 ثانية)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -23,12 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   let doneOrders = [];
+  let preparingOrders = [];
   let lastOrders = [];
-  let orderFilter = 'all';
   let orderSearch = '';
   const expandedRefs = new Set();
+  let freshRefs = new Set();
+  let knownRefs = new Set();
+  let glowT;
 
-  const orderDone = (ref) => doneOrders.includes(ref);
+  const orderStatus = (ref) => doneOrders.includes(ref) ? 'done' : preparingOrders.includes(ref) ? 'preparing' : 'new';
   const waNum = (p) => {
     const d = String(p || '').replace(/[^0-9]/g, '');
     if (!d) return '';
@@ -92,68 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
     location.reload();
   });
 
-  function renderOrders(orders) {
-    lastOrders = orders;
-    const list = document.getElementById('ordersList');
-    const summary = document.getElementById('ordersSummary');
-    if (!orders.length) {
-      summary.hidden = true;
-      list.innerHTML = '<div class="orders-empty">مفيش أوردرات لسه 🍃 أول ما يجي طلب هيظهر هنا</div>';
-      return;
-    }
-    const today = orders.filter(o => isToday(o.date));
-    const todayTotal = today.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
-    const pending = orders.filter(o => !orderDone(o.ref)).length;
-    document.getElementById('osCount').textContent = today.length;
-    document.getElementById('osTotal').textContent = `${todayTotal} ج.م`;
-    document.getElementById('osPending').textContent = pending;
-    summary.hidden = false;
-    const filtered = orders.filter(o => {
-      if (orderFilter === 'done' && !orderDone(o.ref)) return false;
-      if (orderFilter === 'new' && orderDone(o.ref)) return false;
-      if (orderSearch) {
-        const hay = `${o.name || ''} ${o.phone || ''} ${o.ref || ''}`.toLowerCase();
-        if (!hay.includes(orderSearch.toLowerCase())) return false;
-      }
-      return true;
-    });
-    const sorted = [...filtered].sort((a, b) => {
-      const da = orderDone(a.ref) ? 1 : 0;
-      const db = orderDone(b.ref) ? 1 : 0;
-      if (da !== db) return da - db;
-      return new Date(b.date || 0) - new Date(a.date || 0);
-    });
-    if (!sorted.length) {
-      list.innerHTML = '<div class="orders-empty">مفيش نتايج 🍃</div>';
-      return;
-    }
-    list.innerHTML = sorted.map(o => {
-      const done = orderDone(o.ref);
-      const open = expandedRefs.has(o.ref);
-      return `
-        <div class="order-item order-expand${done ? ' done' : ''}${open ? ' expanded' : ''}" data-ref="${escHtml(o.ref)}">
-          <div class="order-item-top">
-            <b>${escHtml(o.ref || '—')} ${done ? '<span class="chip chip-done">تم التسليم</span>' : '<span class="chip chip-new">جديد</span>'}<span class="expand-arrow"><i class="fa-solid fa-chevron-down"></i></span></b>
-            <span>${fmtDate(o.date)}</span>
-          </div>
-          <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
-          <div class="order-details"${open ? '' : ' hidden'}>
-            ${o.lines ? `<div class="order-item-lines">${escHtml(o.lines).split('\n').map(l => `<div>${l}</div>`).join('')}</div>` : ''}
-            ${o.address ? `<div class="order-item-line"><i class="fa-solid fa-location-dot"></i> ${escHtml(o.address)}</div>` : ''}
-            ${o.notes ? `<div class="order-item-line"><i class="fa-solid fa-note-sticky"></i> ${escHtml(o.notes)}</div>` : ''}
-            <div class="order-item-bottom">
-              <span>التوصيل ${escHtml(o.delivery || '0')} ج.م</span>
-              <b>الإجمالي ${escHtml(o.total || '0')} ج.م</b>
-            </div>
-            <div class="order-detail-actions">
-              ${o.phone ? `<a href="https://wa.me/${escHtml(waNum(o.phone))}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm wa-link"><i class="fa-brands fa-whatsapp"></i> كلم العميل</a>` : ''}
-              <button type="button" class="done-btn" data-ref="${escHtml(o.ref)}">${done ? 'إلغاء تم' : 'تم التسليم ✔'}</button>
-            </div>
-          </div>
-        </div>`;
-    }).join('');
-  }
-
   function renderStatus(text, warn) {
     const el = document.getElementById('ordersStatus');
     if (!el) return;
@@ -162,93 +104,260 @@ document.addEventListener('DOMContentLoaded', () => {
     el.style.color = warn ? '#b45309' : '#64748b';
   }
 
-  let slowHinted = false;
+  function renderOrders(orders) {
+    lastOrders = orders;
+    const cols = { new: [], preparing: [], done: [] };
+    orders.forEach(o => cols[orderStatus(o.ref)].push(o));
+    const summary = document.getElementById('ordersSummary');
+    if (!summary) return;
+    const today = orders.filter(o => isToday(o.date));
+    const todayTotal = today.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+    const pending = orders.filter(o => orderStatus(o.ref) !== 'done').length;
+    document.getElementById('osCount').textContent = today.length;
+    document.getElementById('osTotal').textContent = `${todayTotal} ج.م`;
+    document.getElementById('osPending').textContent = pending;
+    summary.hidden = !orders.length;
+    const q = orderSearch.toLowerCase();
+    const match = (o) => !q || `${o.name || ''} ${o.phone || ''} ${o.ref || ''}`.toLowerCase().includes(q);
 
-  async function loadOrders(silent) {
+    [['new', 'فاضي 🍃'], ['preparing', 'فاضي 🍃'], ['done', 'فاضي 🍃']].forEach(([id, emptyText]) => {
+      const list = cols[id].filter(match);
+      document.getElementById('colCount-' + id).textContent = cols[id].length;
+      document.getElementById('col-' + id).innerHTML = list.length
+        ? list.map(o => cardHtml(o)).join('')
+        : `<div class="kanban-empty">${cols[id].length ? 'ولا طلب مطابق 🍃' : emptyText}</div>`;
+    });
+  }
+
+  function cardHtml(o) {
+    const st = orderStatus(o.ref);
+    const done = st === 'done';
+    const open = expandedRefs.has(o.ref);
+    const glow = freshRefs.has(o.ref);
+    const actions = st === 'new'
+      ? `<button type="button" class="chip-act prep" data-act="preparing" data-ref="${escHtml(o.ref)}"><i class="fa-solid fa-utensils"></i> قيد التجهيز</button><button type="button" class="chip-act done" data-act="done" data-ref="${escHtml(o.ref)}"><i class="fa-solid fa-circle-check"></i> اتسلم</button>`
+      : st === 'preparing'
+        ? `<button type="button" class="chip-act back" data-act="new" data-ref="${escHtml(o.ref)}"><i class="fa-solid fa-rotate-left"></i> رجع جديد</button><button type="button" class="chip-act done" data-act="done" data-ref="${escHtml(o.ref)}"><i class="fa-solid fa-circle-check"></i> تم التسليم</button>`
+        : `<button type="button" class="chip-act back" data-act="new" data-ref="${escHtml(o.ref)}"><i class="fa-solid fa-rotate-left"></i> رجع جديد</button>`;
+    const stChip = done ? '<span class="chip chip-done">اتسلم</span>'
+      : st === 'preparing' ? '<span class="chip chip-prep">قيد التجهيز</span>'
+      : '<span class="chip chip-new">جديد</span>';
+    return `
+      <div class="order-item order-expand accent-${st}${done ? ' done' : ''}${glow ? ' is-new' : ''}" data-ref="${escHtml(o.ref)}">
+        <div class="order-item-top">
+          <b>${escHtml(o.ref || '—')} ${stChip}<span class="expand-arrow"><i class="fa-solid fa-chevron-down"></i></span></b>
+          <span>${fmtDate(o.date)}</span>
+        </div>
+        <div class="order-item-line"><i class="fa-solid fa-user"></i> ${escHtml(o.name || '—')}${o.phone ? ' • <span dir="ltr">' + escHtml(o.phone) + '</span>' : ''}</div>
+        <div class="order-details"${open ? '' : ' hidden'}>
+          ${o.lines ? `<div class="order-item-lines">${escHtml(o.lines).split('\n').map(l => `<div>${l}</div>`).join('')}</div>` : ''}
+          ${o.address ? `<div class="order-item-line"><i class="fa-solid fa-location-dot"></i> ${escHtml(o.address)}</div>` : ''}
+          ${o.notes ? `<div class="order-item-line"><i class="fa-solid fa-note-sticky"></i> ${escHtml(o.notes)}</div>` : ''}
+          <div class="order-item-bottom">
+            <span>التوصيل ${escHtml(o.delivery || '0')} ج.م</span>
+            <b>الإجمالي ${escHtml(o.total || '0')} ج.م</b>
+          </div>
+          <div class="order-detail-actions">
+            ${o.phone ? `<a href="https://wa.me/${escHtml(waNum(o.phone))}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm wa-link"><i class="fa-brands fa-whatsapp"></i> كلم العميل</a>` : ''}
+            <div class="act-row">${actions}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ============ الجلب من الشيت (مشترك: يدوي + تلقائي) ============ */
+  async function fetchFresh() {
     const s = getAdminStore();
     const url = (s.sheetUrl || '').trim();
     const key = (s.orderKey || '').trim() || DEFAULT_ORDER_KEY;
-    const list = document.getElementById('ordersList');
-    const btn = document.getElementById('ordersRefreshBtn');
-    if (!url) { if (!silent) showToast('حط رابط الشيت الأول في "إعدادات الطلبات"', false); return; }
+    if (!url) return null;
+    const [orders, doneRes, prepRes] = await Promise.all([
+      fetchOrders(url, key, 25000),
+      loadDoneOrders().catch(() => []),
+      loadPreparingOrders().catch(() => []),
+    ]);
+    doneOrders = doneRes;
+    preparingOrders = prepRes;
+    saveOrdersCache(orders);
+    return orders;
+  }
 
-    // 1) عرض آخر نسخة محفوظة فورًا
-    const cache = getOrdersCache();
-    if (cache && cache.orders.length) {
-      renderOrders(cache.orders);
-      renderStatus(`آخر تحديث: ${ordersAgeText(cache)}`);
-    } else if (!silent) {
-      list.innerHTML = '<div class="orders-empty"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل الأوردرات...</div>';
-    }
-    if (silent && cache && Date.now() - cache.t < 30000) return;
+  function markGlow(fresh) {
+    freshRefs = new Set(fresh);
+    clearTimeout(glowT);
+    glowT = setTimeout(() => { freshRefs.clear(); if (lastOrders.length) renderOrders(lastOrders); }, 25000);
+  }
 
-    // 2) التحديث من الشيت في الخلفية مع مهلة زمنية
-    btn.disabled = true;
-    const start = Date.now();
-    const tick = setInterval(() => {
-      const el = Date.now() - start;
-      if (el > 10000 && !slowHinted) slowHinted = true;
-      renderStatus(slowHinted
-        ? `بأحدث البيانات من الشيت... ${Math.floor(el / 1000)} ث (كولد ستارت)`
-        : `بأحدث البيانات من الشيت... ${Math.floor(el / 1000)} ث`, slowHinted);
-    }, 1000);
+  function beep() {
     try {
-      const [orders, doneRes] = await Promise.all([
-        fetchOrders(url, key, 25000),
-        loadDoneOrders().catch(() => []),
-      ]);
-      doneOrders = doneRes;
-      saveOrdersCache(orders);
-      renderOrders(orders);
-      renderStatus(`آخر تحديث: ${ordersAgeText(getOrdersCache())}`);
-      slowHinted = false;
-    } catch (err) {
-      if (cache && cache.orders.length) {
-        renderOrders(cache.orders);
-        renderStatus(`الشيت مش راضٍ يرد حاليًا — معروض آخر نسخة (${ordersAgeText(cache)})`, true);
-        showToast('تعذر الاتصال بالشيت — معروض آخر نسخة محفوظة', false);
-      } else if (err.message === 'wrong_key') {
-        list.innerHTML = '<div class="orders-empty">المفتاح غلط 🔑 تأكد إن "مفتاح قراءة الأوردرات" مطابق لـ ACCESS_KEY في كود الشيت</div>';
-      } else {
-        list.innerHTML = '<div class="orders-empty">متعرفناش نقرا الشيت ⚠️<br>تأكد إنك عملت خطوة <b>"تحديث الإصدار (v2)"</b> في كود الشيت — التعليمات في <b>google-sheets-apps-script.txt</b></div>';
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const t = ctx.currentTime;
+      [[880, 0], [1318.5, 0.18]].forEach(([f, off]) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = f;
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, t + off);
+        g.gain.exponentialRampToValueAtTime(0.28, t + off + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + off + 0.4);
+        o.start(t + off); o.stop(t + off + 0.45);
+      });
+    } catch { }
+  }
+
+  function alertNew(fresh, orders) {
+    beep();
+    if (navigator.vibrate) { try { navigator.vibrate(300); } catch { } }
+    fresh.forEach(ref => {
+      const o = orders.find(x => x.ref === ref);
+      const body = o ? `${o.name || ''} • ${o.total || ''} ج.م` : '';
+      try {
+        if (window.Notification && Notification.permission === 'granted') {
+          new Notification(`طلب جديد ${ref} 🧾`, { body });
+        }
+      } catch { }
+    });
+    showToast('🔔 طلب جديد واصل — روح للمطبخ!');
+  }
+
+  function detectNew(orders) {
+    const refs = new Set(orders.map(o => (o.ref || '').trim()).filter(Boolean));
+    if (knownRefs.size) {
+      const fresh = [...refs].filter(r => !knownRefs.has(r));
+      if (fresh.length) {
+        markGlow(fresh);
+        alertNew(fresh, orders);
       }
+    }
+    knownRefs = refs;
+  }
+  /* ============ التحميل + الأحداث ============ */
+  async function loadOrders(manual) {
+    renderStatus(manual ? 'بيتحمل الأوردرات...' : '', false);
+    const statusEl = document.getElementById('ordersStatus');
+    const btn = document.getElementById('ordersRefreshBtn');
+    if (btn) btn.disabled = true;
+    try {
+      const orders = await fetchFresh();
+      if (!orders) {
+        renderStatus('مفيش رابط شيت — افتح الإعدادات وحط رابط Google Sheets', true);
+        return;
+      }
+      const cached = getOrdersCache();
+      const use = (cached && cached.length >= orders.length) ? cached : orders;
+      detectNew(orders);
+      renderOrders(use);
+      renderStatus(`${use.length} أوردر ${isToday(use[0]?.date) ? '• ' + fmtDate(use[0].date) : ''}`, false);
+      if (use.length && use[0].date && !isToday(use[0].date)) {
+        renderStatus('الأحدث مش النهاردة — شغال في بيانات قديمة؟', true);
+      }
+    } catch (err) {
+      console.error(err);
+      renderStatus('حصل غلط في الجلب — جرب تاني', true);
     } finally {
-      clearInterval(tick);
-      btn.disabled = false;
+      if (btn) btn.disabled = false;
     }
   }
 
-  document.getElementById('ordersList').addEventListener('click', async (e) => {
-    const doneBtn = e.target.closest('.done-btn');
-    if (doneBtn) {
-      e.stopPropagation();
-      const ref = doneBtn.dataset.ref;
-      if (doneOrders.includes(ref)) {
-        doneOrders = doneOrders.filter(r => r !== ref);
-      } else {
-        doneOrders.push(ref);
-      }
-      const ok = await saveDoneOrders(doneOrders);
-      showToast(ok ? (doneOrders.includes(ref) ? 'تمام — اتسجل أنه اتسلم ✅' : 'اتلغى تم') : 'التحديث اتسجل على الجهاز بس (السحابة مش راضية)', ok);
-      await loadOrders(true);
-      return;
+  async function setStatus(ref, to) {
+    const from = orderStatus(ref);
+    if (to === 'done') {
+      doneOrders = doneOrders.filter(x => x !== ref);
+      if (!doneOrders.includes(ref)) doneOrders.push(ref);
+      preparingOrders = preparingOrders.filter(x => x !== ref);
+    } else if (to === 'preparing') {
+      preparingOrders = preparingOrders.filter(x => x !== ref);
+      if (!preparingOrders.includes(ref)) preparingOrders.push(ref);
+      doneOrders = doneOrders.filter(x => x !== ref);
+    } else {
+      preparingOrders = preparingOrders.filter(x => x !== ref);
+      doneOrders = doneOrders.filter(x => x !== ref);
     }
-    const item = e.target.closest('.order-expand');
-    if (!item) return;
-    if (e.target.closest('a.wa-link')) { e.stopPropagation(); return; }
-    const ref = item.dataset.ref;
-    const details = item.querySelector('.order-details');
-    if (details) {
-      const opening = details.hidden;
-      details.hidden = !opening;
-      item.classList.toggle('expanded', opening);
-      if (opening) expandedRefs.add(ref); else expandedRefs.delete(ref);
+    if (lastOrders.length) renderOrders(lastOrders);
+    try {
+      await Promise.all([saveDoneOrders(doneOrders), savePreparingOrders(preparingOrders)]);
+      renderStatus(`${ref} — ${to === 'done' ? 'اتسلم ✔' : to === 'preparing' ? 'بقى قيد التجهيز 👨‍🍳' : 'رجع جديد 🔄'}`, false);
+    } catch (err) {
+      console.error(err);
+      renderStatus('الحركة اتسجلت محليًا، لكن الحفظ في السحابة فشل — جرب تاني', true);
+      try { await Promise.all([saveDoneOrders(doneOrders), savePreparingOrders(preparingOrders)]); } catch { }
+    }
+  }
+
+  document.getElementById('panel').addEventListener('click', async (e) => {
+    const item = e.target.closest('.order-item');
+    if (item) {
+      const ref = item.dataset.ref;
+      const btn = e.target.closest('.chip-act');
+      if (btn) {
+        e.stopPropagation();
+        btn.disabled = true;
+        await setStatus(ref, btn.dataset.act);
+        btn.disabled = false;
+        return;
+      }
+      if (!e.target.closest('.order-detail-actions')) {
+        const details = item.querySelector('.order-details');
+        const arrow = item.querySelector('.expand-arrow');
+        const wasOpen = !details.hidden;
+        if (wasOpen) { expandedRefs.delete(ref); } else { expandedRefs.add(ref); }
+        details.hidden = wasOpen;
+        arrow.classList.toggle('up', !wasOpen);
+      }
     }
   });
 
-  document.getElementById('ordersRefreshBtn').addEventListener('click', () => loadOrders(false));
+  const searchInput = document.getElementById('ordersSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      orderSearch = searchInput.value.trim();
+      if (lastOrders.length) renderOrders(lastOrders);
+    });
+  }
 
-  // ---------- إعدادات الطلبات ----------
+  /* ============ التنبيهات (صوت + إشعار متصفح) ============ */
+  const notifBtn = document.getElementById('notifBtn');
+  const notifLabel = document.getElementById('notifLabel');
+  function refreshNotifBtn() {
+    if (!notifBtn) return;
+    const granted = !!(window.Notification && Notification.permission === 'granted');
+    notifBtn.classList.toggle('is-on', granted);
+    notifBtn.innerHTML = granted
+      ? '<i class="fa-solid fa-bell"></i><span class="notif-dot"></span>'
+      : '<i class="fa-regular fa-bell"></i>';
+    if (notifLabel) notifLabel.textContent = granted ? 'التنبيهات مفعّلة' : 'شغّل التنبيهات';
+    notifBtn.disabled = !!(window.Notification && Notification.permission === 'denied');
+    notifBtn.title = granted ? 'التنبيهات مفعّلة — صوت + إشعار عند وصول طلب' : 'فعل التنبيهات — صوت + إشعار عند وصول طلب';
+  }
+  if (notifBtn) {
+    notifBtn.addEventListener('click', async () => {
+      if (!window.Notification) { showToast('المتصفح ده مش بيدعم إشعارات'); return; }
+      const p = await Notification.requestPermission();
+      refreshNotifBtn();
+      if (p === 'granted') {
+        showToast('التنبيهات شغالة — هينبهك صوت + إشعار مع كل طلب جديد 🔔');
+        new Notification('التنبيهات مفعّلة ✅', { body: 'هنيّناك صوت + إشعار عند وصول طلب جديد' });
+      } else {
+        showToast('السماح اترفض — ممكن يفعل من إعدادات الموقع');
+      }
+    });
+    refreshNotifBtn();
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    const msgEl = t.querySelector('#toastMsg');
+    t.hidden = false;
+    if (msgEl) msgEl.textContent = msg; else t.textContent = msg;
+    clearTimeout(t._tm);
+    t._tm = setTimeout(() => { t.hidden = true; }, 4000);
+  }
+
+  /* ============ إعدادات الطلبات (الشيت + تيليجرام) ============ */
   function fillOrderSettings() {
     const s = getAdminStore();
     document.getElementById('osSheet').value = s.sheetUrl || '';
@@ -260,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('osSaveBtn').addEventListener('click', () => {
     const s = getAdminStore();
     const sheet = document.getElementById('osSheet').value.trim();
-    if (sheet && !/^https:\/\//.test(sheet)) { showToast('رابط الشيت لازم يبدأ بـ https://', false); return; }
+    if (sheet && !/^https:\/\//.test(sheet)) { showToast('رابط الشيت لازم يبدأ بـ https://'); return; }
     s.sheetUrl = sheet;
     s.orderKey = document.getElementById('osOrderKey').value.trim() || DEFAULT_ORDER_KEY;
     s.telegramToken = document.getElementById('osTgToken').value.trim();
@@ -272,47 +381,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('osSheetTestBtn').addEventListener('click', async () => {
     const url = document.getElementById('osSheet').value.trim();
-    if (!url) { showToast('حط رابط الشيت الأول', false); return; }
+    if (!url) { showToast('حط رابط الشيت الأول'); return; }
     const btn = document.getElementById('osSheetTestBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
     const ok = await sendToSheet(url, { ref: 'TEST', name: 'رسالة تجربة', phone: '-', address: '-', notes: 'تجربة من صفحة الأوردرات', delivery: 0, total: 0, lines: '-' });
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-table"></i> تجربة الشيت';
-    showToast(ok ? 'وصلت الشيت ✅ افتح الشيت وشوف آخر صف' : 'الإرسال فشل — تأكد من نشر الرابط: Anyone + Execute as Me', ok);
+    showToast(ok ? 'وصلت الشيت ✅ افتح الشيت وشوف آخر صف' : 'الإرسال فشل — تأكد من نشر الرابط: Anyone + Execute as Me');
   });
 
   document.getElementById('osTgTestBtn').addEventListener('click', async () => {
     const token = document.getElementById('osTgToken').value.trim();
     const chatId = document.getElementById('osTgChatId').value.trim();
-    if (!token || !chatId) { showToast('اكتب التوكن ومعرف المحادثة الأول', false); return; }
+    if (!token || !chatId) { showToast('اكتب التوكن ومعرف المحادثة الأول'); return; }
     const btn = document.getElementById('osTgTestBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
     const ok = await sendTelegramMessage({ token, chatId }, '✅ رسالة تجربة من صفحة الأوردرات — البوت شغال!');
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> رسالة تجربة';
-    showToast(ok ? 'اتبعتت الرسالة ✅ افتح تيليجرام وشوف' : 'الإرسال فشل — راجع التوكن ومعرف المحادثة', ok);
+    showToast(ok ? 'اتبعتت الرسالة ✅ افتح تيليجرام وشوف' : 'الإرسال فشل — راجع التوكن ومعرف المحادثة');
   });
 
   fillOrderSettings();
-  if (!panel.hidden) loadOrders(false);
+  document.getElementById('ordersRefreshBtn').addEventListener('click', () => loadOrders(true));
 
-  const filterBar = document.getElementById('ordersFilterBar');
-  if (filterBar) {
-    filterBar.addEventListener('click', (e) => {
-      const chip = e.target.closest('.filter-chip');
-      if (!chip) return;
-      orderFilter = chip.dataset.filter || 'all';
-      filterBar.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c === chip));
-      if (lastOrders.length) renderOrders(lastOrders);
-    });
-  }
-  const searchBox = document.getElementById('ordersSearch');
-  if (searchBox) {
-    searchBox.addEventListener('input', () => {
-      orderSearch = searchBox.value.trim();
-      if (lastOrders.length) renderOrders(lastOrders);
-    });
-  }
+  /* ============ التحديث التلقائي كل 15 ثانية ============ */
+  setInterval(() => { if (!panel.hidden) loadOrders(false); }, 15000);
 });

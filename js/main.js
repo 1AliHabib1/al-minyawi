@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- البيانات من المخزن (منتجات المسؤول المضافة) ----------
   const adminStore = getAdminStore();
   let PRODUCTS = buildProducts(adminStore);
-  const WHATSAPP_NUMBER = getWhatsapp(adminStore);
+  let WHATSAPP_NUMBER = getWhatsapp(adminStore);
 
   // ---------- شكل المنتج: صورة مرفوعة أو إيموجي ----------
   const visual = p => p.img ? `<img src="${p.img}" alt="${p.name}">` : p.emoji;
@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveAdminStore(adminStore);
     PRODUCTS = buildProducts(adminStore);
     applyEmojiFallbacks(PRODUCTS);
+    WHATSAPP_NUMBER = getWhatsapp(adminStore);
     DELIVERY_FEE = adminStore.deliveryFee > 0 ? adminStore.deliveryFee : 25;
     renderProducts();
     renderOffers();
@@ -96,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const blob = await getVideoBlob();
       if (blob) {
         const vurl = URL.createObjectURL(blob);
-        wrap.innerHTML = `<video controls playsinline preload="metadata"><source src="${vurl}" type="${blob.type || 'video/mp4'}">متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉</video>`;
+        wrap.innerHTML = `<video controls playsinline preload="none" poster="assets/video-poster.svg"><source src="${vurl}" type="${blob.type || 'video/mp4'}">متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉</video>`;
         return;
       }
     } catch (e) { }
@@ -106,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (yt) {
       wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${yt[1]}?rel=0" title="فيديو المحل" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     } else {
-      wrap.innerHTML = `<video controls playsinline preload="metadata"><source src="${url}" type="video/mp4">متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉</video>`;
+      wrap.innerHTML = `<video controls playsinline preload="none" poster="assets/video-poster.svg"><source src="${url}" type="video/mp4">متصفحك مش بيدعم عرض الفيديو.. شوفنا على فيسبوك 😉</video>`;
     }
   }
   setupVideo();
@@ -202,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (q === 0.25) return '¼';
     if (q === 0.5) return '½';
     if (q === 0.75) return '¾';
-    return q % 1 === 0 ? String(q) : String(q);
+    return String(q);
   }
 
   function formatQtyText(q, unit) {
@@ -535,6 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // تسجيل الطلب في الشيت (في الخلفية — مش بيأثر على التيليجرام/الواتساب)
       if (adminStore.sheetUrl) {
         sendToSheet(adminStore.sheetUrl, {
+          k: (adminStore.orderKey || '').trim() || DEFAULT_ORDER_KEY,
           ref: orderRef,
           name, phone, address, notes,
           lines: lines.join('\n'),
@@ -715,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- فورم التواصل ----------
   document.getElementById('contactForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const honey = document.getElementById('cHoney');
+    const honey = document.getElementById('cfHoney');
     if (honey && honey.value) { document.getElementById('cfMsg').value = ''; return; }
     const name = document.getElementById('cfName').value.trim();
     const phone = document.getElementById('cfPhone').value.trim();
