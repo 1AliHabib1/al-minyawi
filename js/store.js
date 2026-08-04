@@ -271,6 +271,87 @@ async function savePreparingOrders(refs) {
   } catch { return false; }
 }
 
+/* ============================================================
+   الأوردرات في Firebase — المصدر الأساسي (الموقع نفسه)
+   ============================================================ */
+
+function fixPhone(p) {
+  const digits = String(p || '').replace(/[^0-9]/g, '');
+  return /^1\d{9}$/.test(digits) ? '0' + digits : String(p || '');
+}
+
+async function saveOrderToCloud(order) {
+  if (!DEFAULT_FIREBASE_PROJECT) return false;
+  try {
+    const t = parseInt(order.t, 10) || Date.now();
+    const res = await fetchWithTimeout(`${fbBase()}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: {
+        ref: { stringValue: String(order.ref || '') },
+        name: { stringValue: String(order.name || '') },
+        phone: { stringValue: fixPhone(order.phone) },
+        address: { stringValue: String(order.address || '') },
+        notes: { stringValue: String(order.notes || '') },
+        lines: { stringValue: String(order.lines || '') },
+        delivery: { stringValue: String(order.delivery || '') },
+        total: { stringValue: String(order.total || '') },
+        t: { integerValue: t },
+        date: { timestampValue: new Date(t).toISOString() },
+      } }),
+    }, 10000);
+    return res.ok;
+  } catch { return false; }
+}
+
+// null = فشل الاتصال، [] = مفيش أوردرات (بعد الترحيل)
+async function fetchOrdersCloud(limit = 100) {
+  if (!DEFAULT_FIREBASE_PROJECT) return null;
+  try {
+    const res = await fetchWithTimeout(`${fbBase()}/orders?pageSize=${limit}&orderBy=${encodeURIComponent('t desc')}`, {}, 12000);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const out = [];
+    (data.documents || []).forEach(d => {
+      const f = d.fields || {};
+      const s = (k) => (f[k] && f[k].stringValue) || '';
+      out.push({
+        ref: s('ref'),
+        name: s('name'),
+        phone: fixPhone(s('phone')),
+        address: s('address'),
+        notes: s('notes'),
+        lines: s('lines'),
+        delivery: s('delivery'),
+        total: s('total'),
+        date: (f.date && f.date.timestampValue) || (f.t && f.t.integerValue ? new Date(parseInt(f.t.integerValue, 10)).toISOString() : ''),
+      });
+    });
+    return out;
+  } catch { return null; }
+}
+
+// ترحيل الأوردرات القديمة من الشيت لـ Firebase (مرة واحدة)
+async function migrateSheetOrders(url, key, onProgress) {
+  try {
+    const orders = await fetchOrders(url, key, 25000);
+    const existing = await fetchOrdersCloud(5000);
+    const known = new Set((existing || []).map(o => o.ref));
+    let ok = 0, fail = 0, skip = 0;
+    for (let i = 0; i < orders.length; i++) {
+      const o = orders[i];
+      if (known.has(o.ref)) { skip++; if (onProgress) onProgress(i + 1, orders.length); continue; }
+      const t = Date.parse(o.date);
+      const good = await saveOrderToCloud({ ...o, t: isNaN(t) ? Date.now() : t, date: o.date || new Date().toISOString() });
+      if (good) ok++; else fail++;
+      if (onProgress) onProgress(i + 1, orders.length);
+    }
+    return { ok, fail, skip, total: orders.length };
+  } catch (e) {
+    return { error: e && e.message ? e.message : 'fail' };
+  }
+}
+
 async function saveContactMessage({ name, phone, message }) {
   if (!DEFAULT_FIREBASE_PROJECT) return false;
   try {

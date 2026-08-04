@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     el.innerHTML = recent.map(o => {
       const done = orderDone(o.ref);
-      const ph = o.phone && /^1\d{9}$/.test(String(o.phone).replace(/[^0-9]/g, '')) ? '0' + o.phone : o.phone;
+      const ph = fixPhone(o.phone);
       return `
         <div class="order-item${done ? ' done' : ''}">
           <div class="order-item-top">
@@ -613,7 +613,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const s = getAdminStore();
     const url = (s.sheetUrl || '').trim();
     const key = (s.orderKey || '').trim() || DEFAULT_ORDER_KEY;
-    if (!url) { showToast('حط رابط الشيت الأول في "إعدادات الطلبات"', false); return; }
 
     const cache = getOrdersCache();
     if (cache && cache.orders.length) {
@@ -623,16 +622,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const [orders, doneRes] = await Promise.all([
-        fetchOrders(url, key, 25000),
-        loadDoneOrders().catch(() => []),
-      ]);
+      // الأساسي: Firebase (الموقع نفسه) — الشيت احتياطي
+      const cloudOrders = await fetchOrdersCloud(100);
+      const [doneRes] = await Promise.all([loadDoneOrders().catch(() => [])]);
       doneOrders = doneRes;
+      let orders;
+      if (cloudOrders && cloudOrders.length) {
+        orders = cloudOrders;
+      } else if (url) {
+        orders = await fetchOrders(url, key, 25000);
+      } else {
+        orders = cloudOrders || [];
+      }
       saveOrdersCache(orders);
       renderDash(orders);
     } catch (err) {
       if (!cache || !cache.orders.length) {
-        showToast('متعرفناش نقرا الشيت — راجع "إعدادات الطلبات" أو كود الشيت (v2)', false);
+        showToast('متعرفناش نقرا الأوردرات — راجع اتصال الإنترنت', false);
       }
     }
   }

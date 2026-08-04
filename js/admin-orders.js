@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let glowT;
 
   const orderStatus = (ref) => doneOrders.includes(ref) ? 'done' : preparingOrders.includes(ref) ? 'preparing' : 'new';
-  const fixPhone = (p) => /^1\d{9}$/.test(String(p).replace(/[^0-9]/g, '')) ? '0' + p : p;
   const waNum = (p) => {
     const d = String(fixPhone(p)).replace(/[^0-9]/g, '');
     if (!d) return '';
@@ -166,19 +165,29 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
   }
 
-  /* ============ الجلب من الشيت (مشترك: يدوي + تلقائي) ============ */
+  /* ============ الجلب من Firebase (الأساسي) + الشيت (احتياطي) ============ */
   async function fetchFresh() {
     const s = getAdminStore();
     const url = (s.sheetUrl || '').trim();
     const key = (s.orderKey || '').trim() || DEFAULT_ORDER_KEY;
-    if (!url) return null;
-    const [orders, doneRes, prepRes] = await Promise.all([
-      fetchOrders(url, key, 25000),
+    const [cloudOrders, doneRes, prepRes] = await Promise.all([
+      fetchOrdersCloud(100).catch(() => null),
       loadDoneOrders().catch(() => []),
       loadPreparingOrders().catch(() => []),
     ]);
     doneOrders = doneRes;
     preparingOrders = prepRes;
+    let orders;
+    if (cloudOrders && cloudOrders.length) {
+      orders = cloudOrders;
+    } else if (url) {
+      orders = await fetchOrders(url, key, 25000).catch(() => []);
+      if (orders.length && cloudOrders === null) {
+        showToast('مفيش أوردرات في Firebase — متصل على الشيت');
+      }
+    } else {
+      orders = cloudOrders || [];
+    }
     saveOrdersCache(orders);
     return orders;
   }
@@ -380,8 +389,28 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('تم حفظ إعدادات الطلبات ✅');
   });
 
-  document.getElementById('osSheetTestBtn').addEventListener('click', async () => {
-    const url = document.getElementById('osSheet').value.trim();
+  document.getElementById('osMigrateBtn').addEventListener('click', async () => {
+    const s = getAdminStore();
+    const url = (s.sheetUrl || '').trim();
+    if (!url) { showToast('حط رابط الشيت الأول'); return; }
+    const btn = document.getElementById('osMigrateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> بنقل...';
+    const key = (s.orderKey || '').trim() || DEFAULT_ORDER_KEY;
+    const res = await migrateSheetOrders(url, key, (done, total) => {
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> بنقل... ${done}/${total}`;
+    });
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> نقل الأوردرات من الشيت لـ Firebase';
+    if (res.error) {
+      showToast('الترحيل فشل — تأكد من رابط الشيت والمفتاح');
+    } else {
+      showToast(`تم نقل ${res.ok} طلب لـ Firebase ✅${res.skip ? ` (${res.skip} كانوا موجودين)` : ''}`);
+    }
+    loadOrders(true);
+  });
+
+  document.getElementById('osSheetTestBtn').addEventListener('click', async () => {    const url = document.getElementById('osSheet').value.trim();
     if (!url) { showToast('حط رابط الشيت الأول'); return; }
     const btn = document.getElementById('osSheetTestBtn');
     btn.disabled = true;

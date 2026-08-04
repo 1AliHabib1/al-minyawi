@@ -533,7 +533,15 @@ document.addEventListener('DOMContentLoaded', () => {
       lastWaUrl = buildWaUrl(msg);
       lastWaWebUrl = buildWaWebUrl(msg);
 
-      // تسجيل الطلب في الشيت (في الخلفية — مش بيأثر على التيليجرام/الواتساب)
+      // تسجيل الطلب في Firebase (المصدر الأساسي) + نسخة احتياطية في الشيت
+      // الاتنين في الخلفية — مش بيأخروا التيليجرام/الواتساب أو شاشة النجاح
+      saveOrderToCloud({
+        ref: orderRef,
+        name, phone, address, notes,
+        lines: lines.join('\n'),
+        delivery: DELIVERY_FEE,
+        total,
+      });
       if (adminStore.sheetUrl) {
         sendToSheet(adminStore.sheetUrl, {
           k: (adminStore.orderKey || '').trim() || DEFAULT_ORDER_KEY,
