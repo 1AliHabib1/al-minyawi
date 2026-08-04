@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>استرجاع بيانات المتجر</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #f8fafc; color: #1e293b; padding: 16px; max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 1.15rem; margin: 8px 0 4px; }
+  .sub { color: #64748b; font-size: 0.85rem; margin-bottom: 16px; line-height: 1.7; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .warn { background: #fff7ed; border-color: #fed7aa; color: #9a3412; padding: 12px 14px; border-radius: 12px; font-size: .85rem; line-height: 1.7; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  td { padding: 7px 4px; border-bottom: 1px solid #f1f5f9; }
+  td:first-child { color: #64748b; }
+  td:last-child { text-align: left; font-weight: 600; direction: ltr; font-size: .8rem; word-break: break-all; }
+  button { width: 100%; padding: 13px; border: 0; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 12px; }
+  .btn-ok { background: #16a34a; color: #fff; }
+  .btn-ok:hover { background: #15803d; }
+  .btn-ok:disabled { background: #9ca3af; cursor: not-allowed; }
+  .btn-warn { background: #ef4444; color: #fff; }
+  .btn-warn:hover { background: #dc2626; }
+  .btn-ghost { background: #e2e8f0; color: #334155; font-weight: 600; }
+  textarea { width: 100%; min-height: 140px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px; font-size: .75rem; direction: ltr; font-family: monospace; margin-top: 10px; }
+  #result { padding: 14px; border-radius: 12px; font-size: .9rem; font-weight: 700; text-align: center; margin-bottom: 14px; display: none; }
+  #result.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  #result.err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700; }
+  .badge.ok { background: #dcfce7; color: #166534; }
+  .badge.bad { background: #fee2e2; color: #991b1b; }
+  .small { font-size: .78rem; color: #64748b; line-height: 1.7; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: #2563eb; font-size: .82rem; }
+</style>
+</head>
+<body>
+
+<h1>استرجاع بيانات المتجر 🛡️</h1>
+<div class="sub">الصفحة دي بتقرأ النسخة المحفوظة على <b>الجهاز ده</b> (في ذاكرة المتصفح) وترجعها للسحابة. افتحها من <b>نفس الجهاز والمتصفح</b> اللي بتفتح منه لوحة التحكم عادةً.</div>
+
+<div class="warn">⚠️ لو فتحت صفحة اللوحة أو سجلت فيها بعد مشكلة المزامنة، النسخة المحفوظة على الجهاز ممكن تكون اتغيرت. اطّلع على الجدول تحت قبل ما تضغط استرجاع — لو عدد المنتجات صفر وحقول التعديلات فاضية، <b>متسترجعتش</b> وجرّب جهاز تاني.</div>
+
+<div id="result"></div>
+
+<div class="card" id="localCard">
+  <h1 style="font-size:1rem;margin-bottom:8px;">النسخة على الجهاز ده</h1>
+  <div id="localInfo" class="small">جاري القراءة...</div>
+  <table id="localTable" style="display:none"></table>
+  <button class="btn-ok" id="restoreBtn" style="display:none">⬆️ استرجاع هذه النسخة للسحابة</button>
+</div>
+
+<div class="card" id="cloudCard">
+  <h1 style="font-size:1rem;margin-bottom:8px;">النسخة الحالية في السحابة</h1>
+  <div id="cloudInfo" class="small">جاري القراءة...</div>
+</div>
+
+<div class="card" id="pasteCard">
+  <h1 style="font-size:1rem;margin-bottom:4px;">الجهاز ده مش فيه النسخة؟</h1>
+  <div class="small">من الجهاز اللي فيه النسخة: افتح لوحة التحكم ← F12 ← Console ← اكتب: <b style="direction:ltr;display:block;">copy(localStorage.getItem('minyawi_admin_v1'))</b> ← انسخ الـ JSON اللي خرج ← الصقه هنا. أو من صفحة الاسترجاع على الجهاز التاني اضغط "نسخ JSON" وابعت لنفسك.</div>
+  <textarea id="pasteBox" placeholder='{"products":[...]}'></textarea>
+  <button class="btn-ghost" id="pasteBtn">⬆️ استرجاع المنسوخ للسحابة</button>
+</div>
+
+<script>
+(function () {
+  const KEY = 'minyawi_admin_v1';
+  const FB = 'https://firestore.googleapis.com/v1/projects/al-minyawi/databases/(default)/documents';
+  const $ = (id) => document.getElementById(id);
+  const result = (msg, ok) => {
+    const r = $('result');
+    r.className = ok ? 'ok' : 'err';
+    r.textContent = msg;
+    r.style.display = 'block';
+    r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  function readLocal() {
+    try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+  }
+
+  function summarize(s) {
+    const meaningful =
+      (Array.isArray(s.products) && s.products.length) ||
+      (s.overrides && Object.keys(s.overrides).length) ||
+      (Array.isArray(s.deleted) && s.deleted.length) ||
+      (Array.isArray(s.disabled) && s.disabled.length) ||
+      s.whatsapp || s.phone || s.passHash || s.telegramToken || s.deliveryFee || s.video;
+    return meaningful;
+  }
+
+  function renderTable(tbl, s) {
+    const rows = [
+      ['منتجات مضافة منك', (s.products || []).length],
+      ['تعديلات الأسعار/الأسماء', s.overrides ? Object.keys(s.overrides).length : 0],
+      ['منتجات محذوفة', (s.deleted || []).length],
+      ['منتجات مخفية', (s.disabled || []).length],
+      ['واتساب', s.whatsapp || '—'],
+      ['تليفون المتجر', s.phone || '—'],
+      ['سعر التوصيل', s.deliveryFee || 0],
+      ['فيديو المحل', s.video ? 'موجود' : '—'],
+      ['رابط الشيت', (s.sheetUrl || '—').slice(0, 42)],
+      ['كلمة المرور', s.passHash ? 'محفوظة' : '—'],
+      ['توكن تيليجرام', s.telegramToken ? 'موجود' : '—'],
+      ['Chat ID', s.telegramChatId || '—'],
+    ];
+    tbl.innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+    tbl.style.display = 'table';
+  }
+
+  async function loadCloud() {
+    try {
+      const res = await fetch(FB + '/state/store');
+      if (!res.ok) throw new Error('http');
+      const doc = await res.json();
+      return JSON.parse(doc.fields.store.stringValue || 'null');
+    } catch (e) { return null; }
+  }
+
+  async function pushCloud(s) {
+    const clean = JSON.parse(JSON.stringify(s));
+    const del = new Set(clean.deleted || []);
+    const imgs = {};
+    (clean.products || []).forEach(p => { if (!del.has(p.id) && p.img) { imgs[p.id] = p.img; delete p.img; } });
+    Object.keys(clean.overrides || {}).forEach(id => {
+      if (del.has(id)) { delete clean.overrides[id]; return; }
+      const o = clean.overrides[id];
+      if (o && o.img) { imgs[id] = o.img; delete o.img; }
+    });
+    const res = await fetch(FB + '/state/store?updateMask.fieldPaths=store', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { store: { stringValue: JSON.stringify(clean) } } }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    await Promise.all(Object.entries(imgs).map(([id, img]) =>
+      fetch(FB + '/imgs/' + encodeURIComponent(id) + '?updateMask.fieldPaths=img', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { img: { stringValue: img } } }),
+      }).catch(() => {})));
+    return true;
+  }
+
+  function wireRestore(btn, getStore, label) {
+    btn.onclick = async () => {
+      const s = getStore();
+      if (!s) { result('مفيش بيانات للاسترجاع', false); return; }
+      if (!summarize(s)) {
+        if (!confirm('⚠️ النسخة دي فاضية تقريبًا (منتجات 0 وتعديلات 0)! لو استرجعت هتمسح السحابة. متابعة؟')) return;
+      } else if (!confirm('استرجاع البيانات للسحابة؟ هيبقى ده مصير المتجر الرسمي.')) return;
+      btn.disabled = true;
+      btn.textContent = 'جاري الاسترجاع...';
+      try {
+        await pushCloud(s);
+        result('✅ تم استرجاع البيانات للسحابة بنجاح!', true);
+        const cloud = await loadCloud();
+        if (cloud) $('cloudInfo').textContent = 'عدد المنتجات: ' + (cloud.products || []).length + ' • تعديلات: ' + (cloud.overrides ? Object.keys(cloud.overrides).length : 0) + ' • واتساب: ' + (cloud.whatsapp || '—');
+      } catch (e) {
+        result('❌ فشل الاسترجاع: ' + (e && e.message ? e.message : 'خطأ غير معروف'), false);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    };
+  }
+
+  async function init() {
+    const local = readLocal();
+    if (local && summarize(local)) {
+      $('localInfo').innerHTML = '<span class="badge ok">تم العثور على نسخة كاملة ✅</span>';
+      renderTable($('localTable'), local);
+      $('restoreBtn').style.display = 'block';
+    } else if (local) {
+      $('localInfo').innerHTML = '<span class="badge bad">الجهاز ده فيه نسخة بس فاضية — جرّب جهاز تاني</span>';
+    } else {
+      $('localInfo').innerHTML = '<span class="badge bad">مفيش نسخة محفوظة على الجهاز ده — جرب جهاز تاني أو استخدم الصق المنسوخ</span>';
+    }
+
+    const cloud = await loadCloud();
+    if (cloud) {
+      $('cloudInfo').textContent = 'عدد المنتجات: ' + (cloud.products || []).length + ' • تعديلات: ' + (cloud.overrides ? Object.keys(cloud.overrides).length : 0) + ' • واتساب: ' + (cloud.whatsapp || '—') + ' • كلمة المرور: ' + (cloud.passHash ? 'محفوظة' : '—');
+    } else {
+      $('cloudInfo').textContent = 'السحابة مش متاحة دلوقتي (نت أو إعدادات قاعدة البيانات) — الاسترجاع هيفشل. جرب تاني بعد شوية.';
+    }
+
+    wireRestore($('restoreBtn'), readLocal, '⬆️ استرجاع هذه النسخة للسحابة');
+    wireRestore($('pasteBtn'), () => {
+      const raw = $('pasteBox').value.trim();
+      if (!raw) { result('الصق الـ JSON الأول', false); return null; }
+      try { return JSON.parse(raw); } catch (e) { result('الـ JSON المنسوخ مش صالح — انسخه تاني كامل', false); return null; }
+    }, '⬆️ استرجاع المنسوخ للسحابة');
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

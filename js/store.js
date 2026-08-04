@@ -191,10 +191,54 @@ async function cloudLoad() {
   } catch { return null; }
 }
 
+// دمج بيانات السحابة في النسخة المحلية — القيم غير الفارغة من السحابة بس هي اللي تربح،
+// عشان جهاز جديد (ذاكرته فاضية) لا يمسح نسخة محلية سليمة
+async function hydrateStoreFromCloud() {
+  try {
+    const cloud = await cloudLoad();
+    if (!cloud || typeof cloud !== 'object') return false;
+    const s = getAdminStore();
+    if (Array.isArray(cloud.products) && cloud.products.length) s.products = cloud.products;
+    if (cloud.overrides && typeof cloud.overrides === 'object' && Object.keys(cloud.overrides).length) s.overrides = cloud.overrides;
+    if (Array.isArray(cloud.deleted) && cloud.deleted.length) s.deleted = cloud.deleted;
+    if (Array.isArray(cloud.disabled) && cloud.disabled.length) s.disabled = cloud.disabled;
+    if (cloud.whatsapp) s.whatsapp = cloud.whatsapp;
+    if (cloud.phone) s.phone = cloud.phone;
+    if (typeof cloud.deliveryFee === 'number' && cloud.deliveryFee > 0) s.deliveryFee = cloud.deliveryFee;
+    if (cloud.video) s.video = cloud.video;
+    if (cloud.sheetUrl && cloud.sheetUrl !== DEFAULT_SHEET_URL) s.sheetUrl = cloud.sheetUrl;
+    if (cloud.orderKey && cloud.orderKey !== DEFAULT_ORDER_KEY) s.orderKey = cloud.orderKey;
+    if (cloud.hours && cloud.hours !== DEFAULT_HOURS) s.hours = cloud.hours;
+    if (cloud.telegramToken) s.telegramToken = cloud.telegramToken;
+    if (cloud.telegramChatId) s.telegramChatId = cloud.telegramChatId;
+    if (cloud.passHash) s.passHash = cloud.passHash;
+    saveAdminStore(s);
+    return true;
+  } catch { return false; }
+}
+
 async function cloudSave(store) {
   if (!DEFAULT_FIREBASE_PROJECT) return false;
   try {
     const clean = JSON.parse(JSON.stringify(store));
+    // ===== حماية من المسح: جهاز جديد ذاكرته فاضية لا يمسح بيانات السحابة =====
+    const existing = await cloudLoad();
+    if (existing && typeof existing === 'object') {
+      if (!Array.isArray(clean.products) || !clean.products.length) clean.products = Array.isArray(existing.products) ? existing.products : [];
+      clean.overrides = { ...(existing.overrides || {}), ...(clean.overrides || {}) };
+      clean.deleted = [...new Set([...(existing.deleted || []), ...(clean.deleted || [])])];
+      clean.disabled = [...new Set([...(existing.disabled || []), ...(clean.disabled || [])])];
+      if (!clean.whatsapp) clean.whatsapp = existing.whatsapp || '';
+      if (!clean.phone) clean.phone = existing.phone || '';
+      if (!clean.deliveryFee && existing.deliveryFee) clean.deliveryFee = existing.deliveryFee;
+      if (!clean.video) clean.video = existing.video || '';
+      if (!clean.telegramToken) clean.telegramToken = existing.telegramToken || '';
+      if (!clean.telegramChatId) clean.telegramChatId = existing.telegramChatId || '';
+      if (!clean.passHash) clean.passHash = existing.passHash || '';
+      if ((!clean.hours || clean.hours === DEFAULT_HOURS) && existing.hours && existing.hours !== DEFAULT_HOURS) clean.hours = existing.hours;
+      if ((!clean.sheetUrl || clean.sheetUrl === DEFAULT_SHEET_URL) && existing.sheetUrl && existing.sheetUrl !== DEFAULT_SHEET_URL) clean.sheetUrl = existing.sheetUrl;
+      if ((!clean.orderKey || clean.orderKey === DEFAULT_ORDER_KEY) && existing.orderKey && existing.orderKey !== DEFAULT_ORDER_KEY) clean.orderKey = existing.orderKey;
+    }
     const del = new Set(clean.deleted || []);
     const imgs = {};
     (clean.products || []).forEach(p => { if (!del.has(p.id) && p.img) { imgs[p.id] = p.img; delete p.img; } });

@@ -42,10 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const cloudInit = (async () => {
     try {
-      const cloud = await cloudLoad();
-      if (cloud && typeof cloud.passHash === 'string' && cloud.passHash && cloud.passHash !== store.passHash) {
-        store.passHash = cloud.passHash;
-      }
+      const hydrated = await hydrateStoreFromCloud();
+      if (hydrated) fillOrderSettings();
     } catch { }
   })();
 
@@ -368,6 +366,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ============ إعدادات الطلبات (الشيت + تيليجرام) ============ */
+  function settingsResult(msg, ok) {
+    const el = document.getElementById('osSettingsResult');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'settings-result ' + (ok ? 'ok' : 'err');
+    el.hidden = false;
+  }
+
   function fillOrderSettings() {
     const s = getAdminStore();
     document.getElementById('osSheet').value = s.sheetUrl || '';
@@ -376,49 +382,82 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('osTgChatId').value = s.telegramChatId || '';
   }
 
-  document.getElementById('osSaveBtn').addEventListener('click', () => {
+  document.getElementById('osSaveBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('osSaveBtn');
     const s = getAdminStore();
     const sheet = document.getElementById('osSheet').value.trim();
-    if (sheet && !/^https:\/\//.test(sheet)) { showToast('رابط الشيت لازم يبدأ بـ https://'); return; }
+    if (sheet && !/^https?:\/\//.test(sheet)) {
+      settingsResult('رابط الشيت لازم يبدأ بـ http:// أو https://', false);
+      showToast('رابط الشيت لازم يبدأ بـ http:// أو https://', false);
+      return;
+    }
     s.sheetUrl = sheet;
     s.orderKey = document.getElementById('osOrderKey').value.trim() || DEFAULT_ORDER_KEY;
     s.telegramToken = document.getElementById('osTgToken').value.trim();
     s.telegramChatId = document.getElementById('osTgChatId').value.trim();
-    saveAdminStore(s);
-    cloudSave(s);
-    showToast('تم حفظ إعدادات الطلبات ✅');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الحفظ...';
+    const ok = await cloudSave(s);
+    if (ok) saveAdminStore(s);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> حفظ إعدادات الطلبات';
+    if (ok) {
+      settingsResult('اتحفظت الإعدادات في السحابة وعلى الجهاز ✅', true);
+      showToast('تم حفظ إعدادات الطلبات ✅');
+    } else {
+      settingsResult('السحابة مش متاحة دلوقتي — اتسجلت على الجهاز بس، وهتتحفظ في السحابة من أول حفظ تاني', false);
+      saveAdminStore(s);
+      showToast('اتحفظ محليًا — السحابة مش متاحة دلوقتي', false);
+    }
   });
 
   document.getElementById('osMigrateBtn').addEventListener('click', async () => {
     const s = getAdminStore();
     const url = (s.sheetUrl || '').trim();
-    if (!url) { showToast('حط رابط الشيت الأول'); return; }
+    if (!url) { settingsResult('حط رابط الشيت الأول ثم جرّب النقل', false); showToast('حط رابط الشيت الأول'); return; }
     const btn = document.getElementById('osMigrateBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> بنقل...';
-    const key = (s.orderKey || '').trim() || DEFAULT_ORDER_KEY;
-    const res = await migrateSheetOrders(url, key, (done, total) => {
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> بنقل... ${done}/${total}`;
-    });
+    let res;
+    try {
+      const key = (s.orderKey || '').trim() || DEFAULT_ORDER_KEY;
+      res = await migrateSheetOrders(url, key, (done, total) => {
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> بنقل... ${done}/${total}`;
+      });
+    } catch (e) {
+      res = { error: e && e.message ? e.message : 'fail' };
+    }
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> نقل الأوردرات من الشيت لـ Firebase';
     if (res.error) {
-      showToast('الترحيل فشل — تأكد من رابط الشيت والمفتاح');
+      settingsResult('الترحيل فشل — تأكد من رابط الشيت والمفتاح، أو إن السكريبت منشور', false);
+      showToast('الترحيل فشل — تأكد من رابط الشيت والمفتاح', false);
+    } else if (res.total === 0) {
+      settingsResult('الشيت رجع بدون أوردرات — تأكد إن السكريبت شغال وبيقرا الأوردرات', false);
+      showToast('مفيش أوردرات في الشيت؟', false);
     } else {
-      showToast(`تم نقل ${res.ok} طلب لـ Firebase ✅${res.skip ? ` (${res.skip} كانوا موجودين)` : ''}`);
+      settingsResult(`تم نقل ${res.ok} طلب لـ Firebase ✅${res.skip ? ` (${res.skip} كانوا موجودين قبل كده)` : ''}${res.fail ? ` — ${res.fail} فشلوا` : ''}`, true);
+      showToast(`تم نقل ${res.ok} طلب لـ Firebase ✅`);
     }
     loadOrders(true);
   });
 
-  document.getElementById('osSheetTestBtn').addEventListener('click', async () => {    const url = document.getElementById('osSheet').value.trim();
-    if (!url) { showToast('حط رابط الشيت الأول'); return; }
+  document.getElementById('osSheetTestBtn').addEventListener('click', async () => {
+    const url = document.getElementById('osSheet').value.trim();
+    if (!url) { settingsResult('حط رابط الشيت الأول', false); showToast('حط رابط الشيت الأول'); return; }
     const btn = document.getElementById('osSheetTestBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
     const ok = await sendToSheet(url, { ref: 'TEST', name: 'رسالة تجربة', phone: '-', address: '-', notes: 'تجربة من صفحة الأوردرات', delivery: 0, total: 0, lines: '-' });
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-table"></i> تجربة الشيت';
-    showToast(ok ? 'وصلت الشيت ✅ افتح الشيت وشوف آخر صف' : 'الإرسال فشل — تأكد من نشر الرابط: Anyone + Execute as Me');
+    if (ok) {
+      settingsResult('وصلت الشيت ✅ افتح الشيت وشوف آخر صف (رسالة تجربة)', true);
+      showToast('وصلت الشيت ✅');
+    } else {
+      settingsResult('الإرسال فشل — تأكد من نشر الرابط: Anyone + Execute as Me، وأن الرابط سليم', false);
+      showToast('الإرسال فشل — راجع نشر السكريبت', false);
+    }
   });
 
   function tgResult(msg, ok) {

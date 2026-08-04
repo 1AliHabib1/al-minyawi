@@ -3,7 +3,7 @@
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
-  const store = getAdminStore();
+  let store = getAdminStore();
 
   const loginScreen = document.getElementById('loginScreen');
   const panel = document.getElementById('panel');
@@ -197,27 +197,10 @@ document.addEventListener('DOMContentLoaded', () => {
     panel.hidden = false;
     renderAdminList();
     fillSettings();
-    const cloud = await cloudLoad();
-    if (cloud) {
-      if (Array.isArray(cloud.products)) store.products = cloud.products;
-      if (cloud.overrides && typeof cloud.overrides === 'object') store.overrides = cloud.overrides;
-      if (Array.isArray(cloud.deleted)) store.deleted = cloud.deleted;
-      if (Array.isArray(cloud.disabled)) store.disabled = cloud.disabled;
-      if (typeof cloud.whatsapp === 'string') store.whatsapp = cloud.whatsapp;
-      if (typeof cloud.phone === 'string') store.phone = cloud.phone;
-      if (typeof cloud.deliveryFee === 'number') store.deliveryFee = cloud.deliveryFee;
-      if (typeof cloud.video === 'string') store.video = cloud.video;
-      if (typeof cloud.sheetUrl === 'string') store.sheetUrl = cloud.sheetUrl;
-      if (typeof cloud.orderKey === 'string' && cloud.orderKey) store.orderKey = cloud.orderKey;
-      if (typeof cloud.hours === 'string' && cloud.hours) store.hours = cloud.hours;
-      if (typeof cloud.telegramToken === 'string') store.telegramToken = cloud.telegramToken;
-      if (typeof cloud.telegramChatId === 'string') store.telegramChatId = cloud.telegramChatId;
-      if (typeof cloud.passHash === 'string' && cloud.passHash) store.passHash = cloud.passHash;
-      saveAdminStore(store);
-      fillSettings();
-      renderAdminList();
-      showToast('اتحملت البيانات من السحابة ✅');
-    }
+    await hydrateStoreFromCloud();
+    store = getAdminStore();
+    fillSettings();
+    renderAdminList();
     loadOrders();
     loadMessages();
   }
