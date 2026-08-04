@@ -580,7 +580,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (status) status.textContent = 'وصل طلبك للمحل ✅ وهنكلمك في أسرع وقت 🤝';
           showToast(`وصل طلبك رقم ${orderRef} للمحل ✅`);
         } else {
-          if (status) status.textContent = 'التيليجرام مش مستجيب — ابعت الرسالة على الواتساب 📲';
+          if (status) status.textContent = telegramReady(tg)
+            ? 'التيليجرام مش مستجيب — ابعت الرسالة على الواتساب 📲'
+            : 'التيليجرام غير مفعّل في إعدادات المتجر — ابعت الرسالة على الواتساب 📲';
           showToast('خطوة أخيرة: افتح الواتساب واضغط إرسال لتأكيد طلبك 📲', false);
           try { window.open(lastWaUrl, '_blank'); } catch { }
         }

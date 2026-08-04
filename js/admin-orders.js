@@ -421,17 +421,40 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(ok ? 'وصلت الشيت ✅ افتح الشيت وشوف آخر صف' : 'الإرسال فشل — تأكد من نشر الرابط: Anyone + Execute as Me');
   });
 
+  function tgResult(msg, ok) {
+    const el = document.getElementById('osTgResult');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'settings-result ' + (ok ? 'ok' : 'err');
+    el.hidden = false;
+  }
+
   document.getElementById('osTgTestBtn').addEventListener('click', async () => {
     const token = document.getElementById('osTgToken').value.trim();
     const chatId = document.getElementById('osTgChatId').value.trim();
-    if (!token || !chatId) { showToast('اكتب التوكن ومعرف المحادثة الأول'); return; }
     const btn = document.getElementById('osTgTestBtn');
+    if (!token || !chatId) {
+      tgResult('اكتب التوكن ومعرف المحادثة الأول أولاً — التوكن من @BotFather، والـ Chat ID من @userinfobot بعد ما تبعت /start للبوت', false);
+      showToast('اكتب التوكن ومعرف المحادثة الأول');
+      return;
+    }
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
     const ok = await sendTelegramMessage({ token, chatId }, '✅ رسالة تجربة من صفحة الأوردرات — البوت شغال!');
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> رسالة تجربة';
-    showToast(ok ? 'اتبعتت الرسالة ✅ افتح تيليجرام وشوف' : 'الإرسال فشل — راجع التوكن ومعرف المحادثة');
+    if (ok) {
+      tgResult('اتبعتت الرسالة ✅ افتح تيليجرام وشوف — لو مش وصلت رغم نجاحها، ابعث /start للبوت كمان مرة', true);
+      showToast('اتبعتت الرسالة ✅');
+    } else {
+      const me = await fetchWithTimeout(`https://api.telegram.org/bot${token}/getMe`, {}, 10000).then(r => r.json()).catch(() => null);
+      if (me && me.ok) {
+        tgResult(`التوكن سليم والبوت @${me.result.username} ✅ بس الإرسال للـ Chat ID (${chatId}) فشل — ابعث /start للبوت من تيليجرام، وتأكد إن الـ Chat ID صحيح من @userinfobot`, false);
+      } else {
+        tgResult('التوكن مرفوض أو الشبكة محجوبة عن تيليجرام — انسخ التوكن تاني من @BotFather، ولو باقي كده فالمشكلة إن النت عندك محجوب عن تيليجرام', false);
+      }
+      showToast('الإرسال فشل — اقرأ التشخيص تحت الزرار');
+    }
   });
 
   fillOrderSettings();
