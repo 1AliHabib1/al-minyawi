@@ -51,6 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof cloud.telegramToken === 'string' && cloud.telegramToken) adminStore.telegramToken = cloud.telegramToken;
     if (typeof cloud.telegramChatId === 'string' && cloud.telegramChatId) adminStore.telegramChatId = cloud.telegramChatId;
     saveAdminStore(adminStore);
+    // إصلاح ذاتي: الجهاز ده ليه تيليجرام شغال والسحابة فاضية (بعد مسح قديم)
+    // → ندفع للسحابة عشان الأجهزة التانية (الموبايل) تشتغل بيها
+    if (adminStore.telegramToken && adminStore.telegramChatId && !(cloud.telegramToken && cloud.telegramChatId)) {
+      cloudSave(adminStore).catch(() => {});
+    }
     PRODUCTS = buildProducts(adminStore);
     applyEmojiFallbacks(PRODUCTS);
     WHATSAPP_NUMBER = getWhatsapp(adminStore);
