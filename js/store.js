@@ -217,7 +217,7 @@ async function hydrateStoreFromCloud() {
   } catch { return false; }
 }
 
-async function cloudSave(store) {
+async function cloudSave(store, opts = {}) {
   if (!DEFAULT_FIREBASE_PROJECT) return false;
   try {
     const clean = JSON.parse(JSON.stringify(store));
@@ -226,8 +226,10 @@ async function cloudSave(store) {
     if (existing && typeof existing === 'object') {
       if (!Array.isArray(clean.products) || !clean.products.length) clean.products = Array.isArray(existing.products) ? existing.products : [];
       clean.overrides = { ...(existing.overrides || {}), ...(clean.overrides || {}) };
-      clean.deleted = [...new Set([...(existing.deleted || []), ...(clean.deleted || [])])];
-      clean.disabled = [...new Set([...(existing.disabled || []), ...(clean.disabled || [])])];
+      // دمج + استرجاع صريح: المنتجات اللي اترجعت (أو اترجّعت للتشغيل) تنتشر للسحابة فعليًا
+      const restoreIds = opts.restoreIds || [];
+      clean.deleted = [...new Set([...(existing.deleted || []), ...(clean.deleted || [])])].filter(x => !restoreIds.includes(x));
+      clean.disabled = [...new Set([...(existing.disabled || []), ...(clean.disabled || [])])].filter(x => !restoreIds.includes(x));
       if (!clean.whatsapp) clean.whatsapp = existing.whatsapp || '';
       if (!clean.phone) clean.phone = existing.phone || '';
       if (!clean.deliveryFee && existing.deliveryFee) clean.deliveryFee = existing.deliveryFee;

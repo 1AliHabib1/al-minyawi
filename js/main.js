@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyPhone();
     setupVideo();
     applyHours();
+    refreshOrderButtons();
   })();
 
   // ---------- عناصر عامة ----------
@@ -160,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <button class="frac-chip" onclick="stepPick('${p.id}', 0.5, true)">½ نص كيلو</button>
           <button class="frac-chip" onclick="stepPick('${p.id}', 1, true)">1 كيلو</button>
         </div>
-        <div class="qty-tip">✍️ اقدر أكتب الكمية بنفسي (مثال: كيلو ونص)</div>` : ''}
+        <div class="qty-tip">✍️ تقدر تكتب الكمية بنفسك (مثال: كيلو ونص)</div>` : ''}
         <div class="product-price-row">
           <div class="product-price">
             ${p.oldPrice ? `<span class="price-old">${p.oldPrice} ج.م</span>` : ''}
@@ -592,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bindCheckoutModal();
 
   // ---------- أزرار التأكيد (حسب طريقة الاستقبال) ----------
-  (function setupOrderButtons() {
+  function refreshOrderButtons() {
     const tg = getTelegramConfig(adminStore);
     const viaTg = telegramReady(tg);
     const checkoutBtn = document.getElementById('checkoutBtn');
@@ -601,7 +602,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (checkoutBtn) checkoutBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> تأكيد الطلب وإرساله للمحل';
       if (sendOrderBtn) sendOrderBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إرسال الطلب للمحل';
     }
-  })();
+  }
+  refreshOrderButtons();
 
   document.getElementById('checkoutBtn').addEventListener('click', () => {
     if (cartCountTotal() === 0) { showToast('العربة فاضية! ضيف منتجات الأول', false); return; }

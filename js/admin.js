@@ -380,7 +380,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.restoreProduct = (id) => {
     store.deleted = store.deleted.filter(x => x !== id);
     saveAdminStore(store);
-    pushCloud();
+    cloudSave(store, { restoreIds: [id] }).then(ok => {
+      if (!ok) showToast('اتحفظ على جهازك بس — السحابة مش متاحة دلوقتي', false);
+    });
     renderAdminList();
     const p = BASE_PRODUCTS.find(x => x.id === id);
     showToast(`تمت استعادة "${p ? p.name : ''}" للمتجر ✅`);
@@ -393,7 +395,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (store.disabled.includes(id)) {
       store.disabled = store.disabled.filter(x => x !== id);
       saveAdminStore(store);
-      pushCloud();
+      cloudSave(store, { restoreIds: [id] }).then(ok => {
+        if (!ok) showToast('اتحفظ على جهازك بس — السحابة مش متاحة دلوقتي', false);
+      });
       renderAdminList();
       showToast(`تم إرجاع "${p.name}" للمتجر ✅`);
     } else {
