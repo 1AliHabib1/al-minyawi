@@ -573,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <textarea id="orderMsg" class="order-msg" readonly>${msg}</textarea>
         <button type="button" class="btn btn-primary btn-block" onclick="copyOrder()"><i class="fa-solid fa-copy"></i> نسخ تفاصيل الطلب</button>
         <button type="button" class="btn btn-ghost btn-block" onclick="closeCheckoutSuccess()"><i class="fa-solid fa-circle-check"></i> تمام</button>
-        <button type="button" class="btn btn-ghost btn-block" onclick="reopenWa()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب</button>`;
+        <button type="button" class="btn btn-ghost btn-block" id="waFallbackBtn" onclick="reopenWa()"><i class="fa-brands fa-whatsapp"></i> فتح واتساب</button>`;
       navigator.clipboard.writeText(msg).catch(() => {});
       showToast(`وصل طلبك رقم ${orderRef} — بنرسله للمحل ⏳`);
 
@@ -584,6 +584,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = document.getElementById('orderStatus');
         if (ok) {
           if (status) status.textContent = 'وصل طلبك للمحل ✅ وهنكلمك في أسرع وقت 🤝';
+          const waBtn = document.getElementById('waFallbackBtn');
+          if (waBtn) waBtn.style.display = 'none';
           showToast(`وصل طلبك رقم ${orderRef} للمحل ✅`);
         } else {
           if (status) status.textContent = telegramReady(tg)

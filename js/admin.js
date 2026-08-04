@@ -639,7 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const msgs = await listMessages();
     if (btn) btn.disabled = false;
     const dashM = document.getElementById('dashMsgs');
-    if (dashM) dashM.textContent = msgs.length;
+    if (dashM) dashM.textContent = msgs.filter(m => m.status === 'new').length;
     if (!msgs.length) {
       list.innerHTML = '<div class="orders-empty">مفيش رسايل لسه 📭 أول ما عميل يبعت من الموقع هتظهر هنا</div>';
       return;
