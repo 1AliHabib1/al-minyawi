@@ -213,6 +213,12 @@ async function hydrateStoreFromCloud() {
     if (cloud.telegramChatId) s.telegramChatId = cloud.telegramChatId;
     if (cloud.passHash) s.passHash = cloud.passHash;
     saveAdminStore(s);
+    // إصلاح ذاتي: الجهاز ده ليه تيليجرام شغال والسحابة فاضية (حصل مسح قبل كده)
+    // → ندفع إعدادات الجهاز للسحابة عشان الأجهزة التانية (الموبايل) تشتغل بيها
+    const local = getAdminStore();
+    if (local.telegramToken && local.telegramChatId && !(cloud.telegramToken && cloud.telegramChatId)) {
+      cloudSave(local).catch(() => {});
+    }
     return true;
   } catch { return false; }
 }
